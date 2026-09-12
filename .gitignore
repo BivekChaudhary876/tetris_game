@@ -11,3 +11,7 @@ target/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Runtime persistence written by ConfigService / HighScoreService.
+# Generated on first run - each machine keeps its own settings and scores.
+data/

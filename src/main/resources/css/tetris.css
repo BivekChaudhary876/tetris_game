@@ -1,0 +1,155 @@
+/*
+ * Shared stylesheet for every screen.
+ *
+ * Milestone 1 set colours and fonts with inline "-fx-..." strings scattered
+ * through the Java, which meant the same dark-panel styling was written out in
+ * four different files. Collecting it here means the look is changed in one
+ * place, and the view classes go back to describing structure rather than
+ * appearance.
+ */
+
+/* ------------------------------------------------------------------ palette */
+
+.root {
+    -fx-background: #101014;
+    -fx-panel: #222228;
+    -fx-panel-border: #ffffff;
+    -fx-text-primary: #ffffff;
+    -fx-text-muted: #b0b0b8;
+    -fx-accent: #0abab5;
+    -fx-danger: #ff4d4d;
+
+    -fx-background-color: -fx-background;
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+}
+
+/* -------------------------------------------------------------- typography */
+
+.heading {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+
+.label {
+    -fx-text-fill: -fx-text-primary;
+    -fx-font-size: 16px;
+}
+
+.label-muted {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 12px;
+}
+
+.value-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+
+/* ----------------------------------------------------------------- buttons */
+
+.button {
+    -fx-background-color: #3a3a44;
+    -fx-text-fill: -fx-text-primary;
+    -fx-font-size: 14px;
+    -fx-pref-width: 180px;
+    -fx-padding: 8 16 8 16;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: #101014;
+}
+
+.button:pressed {
+    -fx-background-color: #078f8b;
+}
+
+/* ------------------------------------------------------------------ panels */
+
+.panel-box {
+    -fx-background-color: #444444;
+    -fx-border-color: -fx-panel-border;
+    -fx-border-width: 1;
+}
+
+.sidebar {
+    -fx-background-color: -fx-panel;
+}
+
+.playfield {
+    -fx-background-color: #000000;
+}
+
+/* ------------------------------------------------------------ game readouts */
+
+.score-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+
+.next-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+    -fx-translate-x: 5;
+}
+
+/* -------------------------------------------------------------- score table */
+
+.table-header {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+
+.table-cell {
+    -fx-font-size: 18px;
+    -fx-text-fill: -fx-text-primary;
+}
+
+.tick-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: -fx-text-primary;
+}
+
+/* ----------------------------------------------------------------- screens */
+
+.splash-screen {
+    -fx-background-color: #000000;
+}
+
+.menu-screen,
+.config-screen,
+.highscore-screen,
+.game-screen {
+    -fx-background-color: -fx-background;
+}
+
+/* --------------------------------------------------------------- overlays */
+
+.overlay-paused {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+    -fx-background-color: rgba(0, 0, 0, 0.75);
+    -fx-padding: 20;
+}
+
+.overlay-game-over {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-danger;
+    -fx-background-color: rgba(0, 0, 0, 0.75);
+    -fx-padding: 20;
+}
+
+.connection-warning {
+    -fx-text-fill: -fx-danger;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}

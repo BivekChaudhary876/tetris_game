@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>au.edu.Griffith</groupId>
-    <artifactId>tetris_app</artifactId>
+    <artifactId>tetris_game</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -13,6 +13,19 @@
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>25</javafx.version>
+        <!--
+            Which Application subclass is launched. Defaults to the new MVC entry
+            point; the `legacy` profile below overrides it, so you can run either
+            build without editing this file:
+                mvn javafx:run            -> au.edu.Griffith.TetrisApp
+                mvn javafx:run -Plegacy   -> au.edu.Griffith.legacy.Main
+        -->
+        <app.mainClass>au.edu.Griffith.TetrisApp</app.mainClass>
+        <jackson.version>2.18.2</jackson.version>
+        <junit.version>5.11.4</junit.version>
+        <mockito.version>5.14.2</mockito.version>
+        <!-- 0.8.13+ is required to instrument Java 25 class files. -->
+        <jacoco.version>0.8.13</jacoco.version>
     </properties>
 
     <dependencies>
@@ -37,8 +50,39 @@
             <version>${javafx.version}</version>
         </dependency>
 
-    </dependencies>
+        <!-- JSON persistence for config.json and scores.json (au.edu.Griffith.service). -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
 
+        <!-- Testing: JUnit 5 for unit and parameterized tests, Mockito for mocks. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
@@ -47,7 +91,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>au.edu.Griffith.Main</mainClass>
+                    <mainClass>${app.mainClass}</mainClass>
                 </configuration>
             </plugin>
 
@@ -58,12 +102,55 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>au.edu.Griffith.Main</mainClass>
+                            <mainClass>${app.mainClass}</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+            </plugin>
+
+            <!-- Produces the coverage report the marking criteria asks for: target/site/jacoco/index.html -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+            Runs the Milestone 1 build instead of the new MVC one, for comparing
+            behaviour side by side while the gameplay is migrated:
+                mvn javafx:run -Plegacy
+            Delete this profile together with the au.edu.Griffith.legacy package.
+        -->
+        <profile>
+            <id>legacy</id>
+            <properties>
+                <app.mainClass>au.edu.Griffith.legacy.Main</app.mainClass>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

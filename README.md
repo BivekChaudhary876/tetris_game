@@ -52,13 +52,57 @@ A JavaFX implementation of the classic Tetris game, developed using object-orien
 
 * 🧩 `AbstractTetromino` provides a common abstraction for Tetromino pieces
 * 🔌 `Movable` defines movement behaviour
-* 📦 Java `record` types are used for score-entry data
+* 📦 Java `record` types are used for value data (`Position`, `Block`, `ScoreEntry`, `OpMove`)
 * 🔒 Encapsulation is used to protect game state
 * 🏛️ Inheritance is used for the different Tetromino implementations
 
 ---
 
+## 🏗️ Architecture
 
+The project is organised as a **Model–View–Controller** application. Each layer sits in
+its own package and depends only on the layer below it.
+
+```text
+          ┌──────────────────────────────┐
+          │            view              │  JavaFX screens and rendering
+          │  ScreenView, AbstractScreen  │  — draws, never decides
+          │  GameScreen, BoardRenderer   │
+          └───────┬──────────────▲───────┘
+     reports      │              │  GameEvent
+     user intent  │              │  (Observer)
+          ┌───────▼──────────────┴───────┐
+          │         controller           │  Clock, input routing, navigation
+          │  GameController, InputHandler│  — decides, owns no rules
+          │  ScreenNavigator, command/   │
+          └───────────────┬──────────────┘
+                          │ calls
+          ┌───────────────▼──────────────┐
+          │            model             │  Rules and state. No JavaFX import
+          │  GameModel, Board, Score     │  anywhere in this package, so it is
+          │  tetromino/, state/, observer/│  unit-testable without a UI.
+          └──────────────────────────────┘
+```
+
+Supporting packages: `player/` (Human / AI / External strategies),
+`service/` (singletons for config, scores and audio, over a generic JSON repository)
+and `network/` (the `TetrisServer.jar` client).
+
+### Patterns in use
+
+| Pattern       | Where                                                          |
+| ------------- | -------------------------------------------------------------- |
+| MVC           | `model` / `view` / `controller` packages                        |
+| Singleton     | `ConfigService`, `HighScoreService`, `AudioManager`              |
+| Factory       | `TetrominoFactory`, `PlayerFactory`, `CommandFactory`            |
+| Observer      | `Observable` / `GameObserver` — model notifies views             |
+| State         | `GameState` → `Ready` / `Running` / `Paused` / `GameOver`         |
+| Command       | `Command` + one class per player action                          |
+| Strategy      | `Player` → `HumanPlayer` / `AIPlayer` / `ExternalPlayer`         |
+| Facade        | `ScreenNavigator` over the JavaFX `Stage`, `AudioManager` over media |
+| Template Method | `AbstractScreen.getRoot()`, `AbstractTetromino.initialiseShape()` |
+
+---
 
 ## 🧰 Tech Stack
 
@@ -67,6 +111,9 @@ A JavaFX implementation of the classic Tetris game, developed using object-orien
 | Programming Language    | ☕ Java 25+                               |
 | User Interface          | 🎨 JavaFX                                |
 | Build Tool              | 📦 Maven                                 |
+| JSON Persistence        | 🗂️ Jackson Databind                      |
+| Unit Testing            | 🧪 JUnit 5 + Mockito                     |
+| Coverage                | 📈 JaCoCo                                |
 | Version Control         | 🐙 Git                                   |
 | Repository Hosting      | 🐙 GitHub                                |
 | Development Environment | 💻 IntelliJ IDEA                         |
@@ -107,6 +154,19 @@ mvn clean javafx:run
 
 The application should start with the splash screen and then display the main menu.
 
+#### Running the Milestone 1 build
+
+While the gameplay is being migrated into the MVC layers, the Milestone 1 application
+is still available under the `legacy` profile, so the two can be compared side by side:
+
+```bash
+mvn javafx:run -Plegacy     # Milestone 1 build  (au.edu.Griffith.legacy.Main)
+mvn javafx:run              # new MVC build      (au.edu.Griffith.TetrisApp)
+```
+
+No edit to `pom.xml` is needed to switch — the profile overrides the `app.mainClass`
+property. Both the profile and the `legacy` package are removed once migration is complete.
+
 ### Run from IntelliJ IDEA
 
 1. Open the `tetris_game` folder in IntelliJ IDEA.
@@ -127,26 +187,61 @@ The repository contains the Java source code, resources, Maven configuration, do
 ```text
 tetris_game/
 ├── src/
-│   └── main/
-│       ├── java/
-│       │   └── au/edu/Griffith/
-│       │       ├── AbstractTetromino.java   🧩 Abstract base class for Tetromino pieces
-│       │       ├── Movable.java             🔌 Interface defining movement behaviour
-│       │       ├── Configuration.java       ⚙️ Configuration screen
-│       │       ├── HighScores.java          🏆 High-score screen
-│       │       ├── Main.java                🚪 Application entry point and splash screen
-│       │       ├── Tetris.java              🧠 Core game logic and game loop
-│       │       ├── TetrominoI.java          🟦 I-piece
-│       │       ├── TetrominoJ.java          🟧 J-piece
-│       │       ├── TetrominoL.java          🟪 L-piece
-│       │       ├── TetrominoO.java          🟨 O-piece
-│       │       ├── TetrominoS.java          🟩 S-piece
-│       │       ├── TetrominoT.java          🟥 T-piece
-│       │       └── TetrominoZ.java          🟫 Z-piece
-│       └── resources/                       🖼️ Images and static resources
-├── .gitignore                               🚫 Ignored IDE and build files
-├── pom.xml                                  📦 Maven project configuration
-└── README.md                                📖 Project documentation
+│   ├── main/
+│   │   ├── java/au/edu/Griffith/
+│   │   │   ├── TetrisApp.java              🚪 Application entry point; wires the layers together
+│   │   │   │
+│   │   │   ├── model/                      🧠 MODEL — rules and state, zero JavaFX
+│   │   │   │   ├── GameModel.java          🎯 One field: board + score + state; the Observer subject
+│   │   │   │   ├── Board.java              📐 Grid, collision checks, line clearing
+│   │   │   │   ├── Score.java              🎯 Points, level and lines-erased rules
+│   │   │   │   ├── HighScoreTable.java     🏆 Top-ten ranking rules
+│   │   │   │   ├── GameConfig.java         ⚙️ Settings, as persisted to config.json
+│   │   │   │   ├── Movable.java            🔌 Movement contract implemented by GameModel
+│   │   │   │   ├── GameStatus.java         🏷️ enum READY / RUNNING / PAUSED / GAME_OVER
+│   │   │   │   ├── PlayerType.java         🏷️ enum HUMAN / AI / EXTERNAL
+│   │   │   │   ├── Position.java           📦 record — a cell coordinate
+│   │   │   │   ├── Block.java              📦 record — a locked cell
+│   │   │   │   ├── ScoreEntry.java         📦 record — one high-score row (Comparable)
+│   │   │   │   ├── tetromino/              🧩 The seven pieces, their enum and their factory
+│   │   │   │   ├── state/                  🔄 State pattern: Ready / Running / Paused / GameOver
+│   │   │   │   └── observer/               📡 Observer pattern: Observable, GameObserver, GameEvent
+│   │   │   │
+│   │   │   ├── view/                       🎨 VIEW — JavaFX only; draws, never decides
+│   │   │   │   ├── ScreenView.java         🔌 Contract every screen implements
+│   │   │   │   ├── AbstractScreen.java     🏛️ Shared stylesheet and build sequence
+│   │   │   │   ├── SplashScreen.java       🎬 Group and course details
+│   │   │   │   ├── MainMenuScreen.java     🏠 Play / Configuration / High Scores / Exit
+│   │   │   │   ├── ConfigurationScreen.java ⚙️ Settings controls
+│   │   │   │   ├── HighScoreScreen.java    🏆 Top-ten table
+│   │   │   │   ├── GameScreen.java         🎮 One or two fields; observes the models
+│   │   │   │   ├── BoardRenderer.java      🖌️ Canvas painting; the only TetrominoType → Color step
+│   │   │   │   └── SidePanel.java          📊 Player type, level, score, next piece
+│   │   │   │
+│   │   │   ├── controller/                 🎛️ CONTROLLER — clock, input, navigation
+│   │   │   │   ├── GameController.java     ⏱️ Session clock; drives models and players
+│   │   │   │   ├── ScreenNavigator.java    🧭 Facade over the Stage; owns window sizing
+│   │   │   │   ├── InputHandler.java       ⌨️ Key → action maps, one per player
+│   │   │   │   ├── MainMenuController.java 🏠 Menu use cases
+│   │   │   │   ├── ConfigurationController.java ⚙️ Draft-edit and save settings
+│   │   │   │   ├── HighScoreController.java 🏆 Table rows, clear, record new score
+│   │   │   │   └── command/                📜 Command pattern: one class per player action
+│   │   │   │
+│   │   │   ├── player/                     🕹️ Strategy: Human / AI / External + PlayerFactory
+│   │   │   ├── service/                    💾 Singletons over a generic JSON Repository<T>
+│   │   │   ├── network/                    🌐 TetrisServer client (localhost:3000)
+│   │   │   └── legacy/                     ⚠️ Milestone 1 code — delete once fully migrated
+│   │   │
+│   │   └── resources/
+│   │       ├── css/tetris.css              🎨 Shared stylesheet (replaces inline -fx- strings)
+│   │       └── splash-image.png            🖼️ Splash artwork
+│   │
+│   └── test/java/au/edu/Griffith/          🧪 JUnit 5, parameterized tests, stubs and Mockito mocks
+│
+├── data/                                   💾 config.json and scores.json (generated, git-ignored)
+├── .gitignore                              🚫 Ignored IDE, build and runtime files
+├── pom.xml                                 📦 Maven: JavaFX, Jackson, JUnit, Mockito, JaCoCo
+└── README.md                               📖 Project documentation
 ```
 
 </details>
@@ -160,9 +255,10 @@ The following generated or IDE-specific files are intentionally excluded from th
 target/
 *.iml
 *.class
+data/
 ```
 
-These files are generated locally by IntelliJ IDEA or Maven and are not required to build the project from source.
+These files are generated locally by IntelliJ IDEA or Maven and are not required to build the project from source. `data/` holds the `config.json` and `scores.json` written at runtime, so each machine keeps its own settings and scores.
 
 ---
 
