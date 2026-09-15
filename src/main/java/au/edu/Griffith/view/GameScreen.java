@@ -119,7 +119,7 @@ public class GameScreen extends AbstractScreen implements GameObserver {
     @Override
     public void onGameEvent(GameEvent event) {
         switch (event.type()) {
-            case SCORE_CHANGED, PIECE_SPAWNED -> sidePanel.refresh();
+            case SCORE_CHANGED, PIECE_SPAWNED, LEVEL_CHANGED -> sidePanel.refresh();
             case STATUS_CHANGED -> updateOverlays();
             case PIECE_MOVED, PIECE_LOCKED, LINES_CLEARED -> {
                 // The per-frame render already covers these.

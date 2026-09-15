@@ -100,11 +100,33 @@ public class GameConfig {
      * @throws IllegalStateException if any setting is out of range
      */
     public void validate() {
-        throw new UnsupportedOperationException("TODO: range-check width, height and level");
+        requireInRange("Field width", fieldWidth, MIN_WIDTH, MAX_WIDTH);
+        requireInRange("Field height", fieldHeight, MIN_HEIGHT, MAX_HEIGHT);
+        requireInRange("Starting level", startingLevel, MIN_LEVEL, MAX_LEVEL);
+
+        if (playerOneType == null || playerTwoType == null) {
+            throw new IllegalStateException("Player types must not be null");
+        }
+    }
+
+    private static void requireInRange(String name, int value, int min, int max) {
+        if (value < min || value > max) {
+            throw new IllegalStateException(
+                    name + " must be between " + min + " and " + max + " but was " + value);
+        }
     }
 
     /** Deep copy, so the configuration screen can edit a draft and discard it on Cancel. */
     public GameConfig copy() {
-        throw new UnsupportedOperationException("TODO: return a field-by-field clone");
+        GameConfig c = new GameConfig();
+        c.fieldWidth = this.fieldWidth;
+        c.fieldHeight = this.fieldHeight;
+        c.startingLevel = this.startingLevel;
+        c.musicOn = this.musicOn;
+        c.soundEffectsOn = this.soundEffectsOn;
+        c.extendMode = this.extendMode;
+        c.playerOneType = this.playerOneType;
+        c.playerTwoType = this.playerTwoType;
+        return c;
     }
 }
