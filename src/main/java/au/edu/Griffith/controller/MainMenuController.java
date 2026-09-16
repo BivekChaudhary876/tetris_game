@@ -3,6 +3,7 @@ package au.edu.Griffith.controller;
 import au.edu.Griffith.model.Board;
 import au.edu.Griffith.model.GameModel;
 import au.edu.Griffith.model.tetromino.SharedSequenceGenerator;
+import au.edu.Griffith.service.AudioManager;
 import au.edu.Griffith.view.ConfigurationScreen;
 import au.edu.Griffith.view.HighScoreScreen;
 import javafx.application.Platform;
@@ -28,10 +29,11 @@ public class MainMenuController {
     }
 
     /** Builds a fresh game at the configured field size and level. */
+
     public void onPlay() {
         // Read when Play is pressed, so settings changed this session apply.
         GameConfig config = ConfigService.getInstance().getConfig();
-
+        //implements the new width height and level
         GameModel model = new GameModel(
                 new Board(config.getFieldWidth(), config.getFieldHeight()),
                 new SharedSequenceGenerator(),
