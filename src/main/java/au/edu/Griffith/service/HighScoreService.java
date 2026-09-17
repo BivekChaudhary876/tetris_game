@@ -1,6 +1,7 @@
 package au.edu.Griffith.service;
 
 import au.edu.Griffith.model.HighScoreTable;
+import au.edu.Griffith.model.PlayerType;
 import au.edu.Griffith.model.ScoreEntry;
 
 import java.nio.file.Path;
@@ -27,8 +28,13 @@ public final class HighScoreService {
     private boolean loaded;
 
     private HighScoreService() {
-        this.repository = new JsonRepository<>(SCORES_FILE, new com.fasterxml.jackson.core.type.TypeReference<>() {
-        });
+        this(new JsonRepository<>(SCORES_FILE, new com.fasterxml.jackson.core.type.TypeReference<>() {
+        }));
+    }
+
+    /** Visible for tests so they can point at a temp file instead of {@code data/scores.json}. */
+    HighScoreService(Repository<List<ScoreEntry>> repository) {
+        this.repository = repository;
     }
 
     public static HighScoreService getInstance() {
@@ -37,21 +43,48 @@ public final class HighScoreService {
 
     /** The table, loaded from disk on first access. */
     public HighScoreTable getTable() {
-        throw new UnsupportedOperationException("TODO: load once into table via repository, then return it");
+        if (!loaded) {
+            repository.load().ifPresentOrElse(
+                    table::replaceAll,
+                    this::seedDefaults);
+            loaded = true;
+        }
+        return table;
     }
 
     /** True if this score earns a place, so the name prompt should be shown. */
     public boolean qualifies(int score) {
-        throw new UnsupportedOperationException("TODO: delegate to getTable().qualifies(score)");
+        return getTable().qualifies(score);
     }
 
     /** Records a finished game and writes the table straight back to disk. */
     public void record(ScoreEntry entry) {
-        throw new UnsupportedOperationException("TODO: table.add(entry), then repository.save(table.getEntries())");
+        getTable().add(entry);
+        repository.save(table.getEntries());
     }
 
     /** Empties the table and persists the empty result, behind the reset button. */
     public void clearAll() {
-        throw new UnsupportedOperationException("TODO: table.clear(), repository.save(List.of())");
+        getTable().clear();
+        repository.save(List.of());
+    }
+
+    /**
+     * First run only: ten starter rows so the high-score screen is populated, then
+     * write {@code scores.json}. Modest scores so a short game can still qualify.
+     */
+    private void seedDefaults() {
+        table.replaceAll(List.of(
+                new ScoreEntry("Alex", 1000, PlayerType.HUMAN),
+                new ScoreEntry("Sam", 900, PlayerType.HUMAN),
+                new ScoreEntry("Jordan", 800, PlayerType.HUMAN),
+                new ScoreEntry("Riley", 700, PlayerType.HUMAN),
+                new ScoreEntry("Casey", 600, PlayerType.HUMAN),
+                new ScoreEntry("Morgan", 500, PlayerType.HUMAN),
+                new ScoreEntry("Taylor", 400, PlayerType.HUMAN),
+                new ScoreEntry("Quinn", 300, PlayerType.HUMAN),
+                new ScoreEntry("Avery", 200, PlayerType.HUMAN),
+                new ScoreEntry("Blake", 100, PlayerType.HUMAN)));
+        repository.save(table.getEntries());
     }
 }

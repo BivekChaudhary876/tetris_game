@@ -70,11 +70,12 @@ public final class AudioManager {
 
     /** Behind the {@code M} key and the configuration checkbox. */
     public void setMusicOn(boolean musicOn) {
-        throw new UnsupportedOperationException("TODO: store the flag and start or stop playback accordingly");
+        this.musicOn = musicOn;
+        // Playback start/stop waits on the MediaPlayer TODOs above.
     }
 
     /** Behind the {@code S} key and the configuration checkbox. */
     public void setEffectsOn(boolean effectsOn) {
-        throw new UnsupportedOperationException("TODO: store the flag");
+        this.effectsOn = effectsOn;
     }
 }

@@ -1,6 +1,8 @@
 package au.edu.Griffith.view;
 
 import au.edu.Griffith.controller.ConfigurationController;
+import au.edu.Griffith.model.GameConfig;
+import au.edu.Griffith.model.PlayerType;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -15,27 +17,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+
 /**
  * The settings screen: field size, level, music, sound, AI play and extend mode.
  *
- * <p>Presentational only, exactly as in Milestone 1 — dragging a slider updates
- * the value beside it and ticking a box flips its On/Off label, but nothing is
- * saved or applied to the game. Wiring these to real settings is a later
- * milestone requirement.</p>
+ * <p>Edits a draft {@link GameConfig}. Back asks the controller to persist it.</p>
  */
 public class ConfigurationScreen extends AbstractScreen {
-
-    private static final int WIDTH_MIN = 5;
-    private static final int WIDTH_MAX = 15;
-    private static final int WIDTH_DEFAULT = 10;
-
-    private static final int HEIGHT_MIN = 15;
-    private static final int HEIGHT_MAX = 30;
-    private static final int HEIGHT_DEFAULT = 20;
-
-    private static final int LEVEL_MIN = 1;
-    private static final int LEVEL_MAX = 10;
-    private static final int LEVEL_DEFAULT = 6;
 
     private static final double SLIDER_WIDTH = 260;
 
@@ -72,13 +62,19 @@ public class ConfigurationScreen extends AbstractScreen {
         valueColumn.setHalignment(HPos.RIGHT);
         settings.getColumnConstraints().addAll(nameColumn, controlColumn, valueColumn);
 
-        addSliderRow("Field Width (No of cells):", WIDTH_MIN, WIDTH_MAX, WIDTH_DEFAULT);
-        addSliderRow("Field Height (No of cells):", HEIGHT_MIN, HEIGHT_MAX, HEIGHT_DEFAULT);
-        addSliderRow("Game Level:", LEVEL_MIN, LEVEL_MAX, LEVEL_DEFAULT);
-        addCheckBoxRow("Music (On/Off):", true);
-        addCheckBoxRow("Sound Effect (On/Off):", true);
-        addCheckBoxRow("AI Play (On/Off):", false);
-        addCheckBoxRow("Extend Mode (On/Off):", false);
+        GameConfig draft = controller.getDraft();
+        addSliderRow("Field Width (No of cells):",
+                GameConfig.MIN_WIDTH, GameConfig.MAX_WIDTH, draft.getFieldWidth(), draft::setFieldWidth);
+        addSliderRow("Field Height (No of cells):",
+                GameConfig.MIN_HEIGHT, GameConfig.MAX_HEIGHT, draft.getFieldHeight(), draft::setFieldHeight);
+        addSliderRow("Game Level:",
+                GameConfig.MIN_LEVEL, GameConfig.MAX_LEVEL, draft.getStartingLevel(), draft::setStartingLevel);
+        addCheckBoxRow("Music (On/Off):", draft.isMusicOn(), draft::setMusicOn);
+        addCheckBoxRow("Sound Effect (On/Off):", draft.isSoundEffectsOn(), draft::setSoundEffectsOn);
+        addCheckBoxRow("AI Play (On/Off):",
+                draft.getPlayerOneType() == PlayerType.AI,
+                enabled -> draft.setPlayerOneType(enabled ? PlayerType.AI : PlayerType.HUMAN));
+        addCheckBoxRow("Extend Mode (On/Off):", draft.isExtendMode(), draft::setExtendMode);
 
         Button backButton = new Button("Back");
         backButton.setPrefWidth(ScreenSizes.BUTTON_WIDTH);
@@ -96,7 +92,7 @@ public class ConfigurationScreen extends AbstractScreen {
      * Adds one slider setting: name on the left, the slider in the middle and the
      * live value on the right.
      */
-    private void addSliderRow(String text, int min, int max, int initial) {
+    private void addSliderRow(String text, int min, int max, int initial, IntConsumer onChange) {
         Label name = new Label(text);
 
         Slider slider = new Slider(min, max, initial);
@@ -110,8 +106,11 @@ public class ConfigurationScreen extends AbstractScreen {
         value.getStyleClass().add("value-label");
 
         // Sliders report doubles, so round back to a whole number of cells.
-        slider.valueProperty().addListener((observable, oldValue, newValue) ->
-                value.setText(String.valueOf(Math.round(newValue.doubleValue()))));
+        slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            int rounded = (int) Math.round(newValue.doubleValue());
+            value.setText(String.valueOf(rounded));
+            onChange.accept(rounded);
+        });
 
         VBox control = new VBox(2, slider, buildScale(min, max));
         control.setPrefWidth(SLIDER_WIDTH);
@@ -152,7 +151,7 @@ public class ConfigurationScreen extends AbstractScreen {
      * Adds one on/off setting: name on the left, the tick box in the middle and
      * the "On"/"Off" text on the right.
      */
-    private void addCheckBoxRow(String text, boolean selected) {
+    private void addCheckBoxRow(String text, boolean selected, Consumer<Boolean> onChange) {
         Label name = new Label(text);
 
         CheckBox checkBox = new CheckBox();
@@ -161,8 +160,10 @@ public class ConfigurationScreen extends AbstractScreen {
         Label state = new Label(selected ? "On" : "Off");
         state.getStyleClass().add("value-label");
 
-        checkBox.selectedProperty().addListener((observable, oldValue, newValue) ->
-                state.setText(newValue ? "On" : "Off"));
+        checkBox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            state.setText(newValue ? "On" : "Off");
+            onChange.accept(newValue);
+        });
 
         settings.add(name, 0, nextRow);
         settings.add(checkBox, 1, nextRow);

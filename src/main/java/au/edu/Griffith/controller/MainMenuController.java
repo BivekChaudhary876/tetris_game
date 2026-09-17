@@ -1,8 +1,10 @@
 package au.edu.Griffith.controller;
 
 import au.edu.Griffith.model.Board;
+import au.edu.Griffith.model.GameConfig;
 import au.edu.Griffith.model.GameModel;
 import au.edu.Griffith.model.tetromino.SharedSequenceGenerator;
+import au.edu.Griffith.service.ConfigService;
 import au.edu.Griffith.view.ConfigurationScreen;
 import au.edu.Griffith.view.HighScoreScreen;
 import javafx.application.Platform;
@@ -27,8 +29,9 @@ public class MainMenuController {
 
     /** Builds a fresh game and hands control to a {@link GameController}. */
     public void onPlay() {
+        GameConfig config = ConfigService.getInstance().getConfig();
         GameModel model = new GameModel(
-                new Board(Board.DEFAULT_WIDTH, Board.DEFAULT_HEIGHT),
+                new Board(config.getFieldWidth(), config.getFieldHeight()),
                 new SharedSequenceGenerator());
 
         new GameController(navigator, model).start();

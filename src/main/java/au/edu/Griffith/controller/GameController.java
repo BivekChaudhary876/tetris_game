@@ -3,11 +3,16 @@ package au.edu.Griffith.controller;
 import au.edu.Griffith.controller.command.CommandFactory;
 import au.edu.Griffith.model.GameModel;
 import au.edu.Griffith.model.GameStatus;
+import au.edu.Griffith.model.PlayerType;
+import au.edu.Griffith.model.ScoreEntry;
+import au.edu.Griffith.service.HighScoreService;
 import au.edu.Griffith.view.GameScreen;
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 
 /**
@@ -28,6 +33,7 @@ public class GameController {
 
     private GameScreen screen;
     private AnimationTimer clock;
+    private boolean highScorePrompted;
 
     public GameController(ScreenNavigator navigator, GameModel model) {
         this.navigator = navigator;
@@ -72,6 +78,9 @@ public class GameController {
 
                 model.tick(elapsedMs);
                 screen.render();
+                if (model.getStatus() == GameStatus.GAME_OVER) {
+                    offerHighScoreOnce();
+                }
             }
         };
         clock.start();
@@ -102,8 +111,40 @@ public class GameController {
 
     /** Restarts the field with a fresh piece sequence, behind the Replay button. */
     public void restart() {
+        highScorePrompted = false;
         model.restart();
         screen.render();
+    }
+
+    /**
+     * Once per finished game: if the score earns a top-ten place, ask for a name
+     * and persist it. Cancel or a blank name skips the record.
+     */
+    private void offerHighScoreOnce() {
+        if (highScorePrompted) {
+            return;
+        }
+        highScorePrompted = true;
+        Platform.runLater(this::promptForHighScore);
+    }
+
+    private void promptForHighScore() {
+        int points = model.getScore().getPoints();
+        if (!HighScoreService.getInstance().qualifies(points)) {
+            return;
+        }
+
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("High Score");
+        dialog.setHeaderText("Score: " + points + " — you made the top 10!");
+        dialog.setContentText("Enter your name:");
+        dialog.initOwner(navigator.getStage());
+
+        dialog.showAndWait()
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .ifPresent(name -> HighScoreService.getInstance()
+                        .record(new ScoreEntry(name, points, PlayerType.HUMAN)));
     }
 
     /** Stops the clock and restores the default window size. */

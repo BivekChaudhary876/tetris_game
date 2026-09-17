@@ -32,8 +32,13 @@ public final class ConfigService {
     private GameConfig config;
 
     private ConfigService() {
-        this.repository = new JsonRepository<>(CONFIG_FILE, new com.fasterxml.jackson.core.type.TypeReference<>() {
-        });
+        this(new JsonRepository<>(CONFIG_FILE, new com.fasterxml.jackson.core.type.TypeReference<>() {
+        }));
+    }
+
+    /** Visible for tests so they can point at a temp file instead of {@code data/config.json}. */
+    ConfigService(Repository<GameConfig> repository) {
+        this.repository = repository;
     }
 
     public static ConfigService getInstance() {
@@ -42,16 +47,24 @@ public final class ConfigService {
 
     /** The live settings, loaded from disk on first access, defaults if absent. */
     public GameConfig getConfig() {
-        throw new UnsupportedOperationException("TODO: lazily load from repository, falling back to a default GameConfig");
+        if (config == null) {
+            config = repository.load().orElseGet(GameConfig::new);
+            if (!repository.exists()) {
+                repository.save(config);
+            }
+        }
+        return config;
     }
 
     /** Validates and replaces the live settings, then writes them to disk. */
     public void update(GameConfig updated) {
-        throw new UnsupportedOperationException("TODO: updated.validate(), assign, repository.save(updated)");
+        updated.validate();
+        config = updated;
+        repository.save(updated);
     }
 
     /** Forces a re-read from disk, used by tests. */
     public void reload() {
-        throw new UnsupportedOperationException("TODO: null the cached config so the next getConfig() reloads");
+        config = null;
     }
 }

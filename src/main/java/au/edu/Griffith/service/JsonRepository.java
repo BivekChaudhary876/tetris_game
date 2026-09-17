@@ -3,6 +3,9 @@ package au.edu.Griffith.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -41,18 +44,31 @@ public class JsonRepository<T> implements Repository<T> {
 
     @Override
     public Optional<T> load() {
-        throw new UnsupportedOperationException(
-                "TODO: if the file exists, mapper.readValue into typeReference; return empty on absence or parse failure");
+        if (!Files.exists(file)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(mapper.readValue(file.toFile(), typeReference));
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
     public void save(T value) {
-        throw new UnsupportedOperationException(
-                "TODO: create parent directories, then mapper.writerWithDefaultPrettyPrinter().writeValue(file, value)");
+        try {
+            Path parent = file.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), value);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public boolean exists() {
-        throw new UnsupportedOperationException("TODO: Files.exists(file)");
+        return Files.exists(file);
     }
 }
