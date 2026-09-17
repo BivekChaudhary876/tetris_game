@@ -33,18 +33,16 @@ public class ExternalPlayer extends AbstractPlayer {
 
     @Override
     public void update(double elapsedMs) {
-        throw new UnsupportedOperationException(
-                "TODO: if connected and a new piece needs a move, send the board state "
-                        + "and turn the returned OpMove into rotate/move commands; do nothing when disconnected");
+        // Socket protocol is a later milestone; gravity still runs while disconnected.
     }
 
     /** True while the server is reachable; drives the on-screen warning. */
     public boolean isConnected() {
-        throw new UnsupportedOperationException("TODO: delegate to client.isConnected()");
+        return client.isConnected();
     }
 
     @Override
     public void dispose() {
-        throw new UnsupportedOperationException("TODO: client.disconnect()");
+        // Client disconnect is a later milestone.
     }
 }

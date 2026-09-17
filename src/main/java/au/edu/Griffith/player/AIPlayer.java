@@ -30,8 +30,8 @@ public class AIPlayer extends AbstractPlayer {
 
     @Override
     public void update(double elapsedMs) {
-        throw new UnsupportedOperationException(
-                "TODO: plan if the queue is empty, then pop one action every MOVE_INTERVAL_MS");
+        // Planning is a later milestone. Gravity still drops the piece so an AI
+        // field in extend mode remains playable instead of throwing.
     }
 
     /**
@@ -53,6 +53,6 @@ public class AIPlayer extends AbstractPlayer {
 
     @Override
     public void dispose() {
-        throw new UnsupportedOperationException("TODO: shut down the planning executor");
+        // No executor yet.
     }
 }

@@ -19,7 +19,8 @@ public abstract class AbstractPlayer implements Player {
 
     @Override
     public void attach(GameModel model) {
-        throw new UnsupportedOperationException("TODO: store the model and build a CommandFactory for it");
+        this.model = model;
+        this.commands = new CommandFactory(model);
     }
 
     /**
@@ -27,7 +28,9 @@ public abstract class AbstractPlayer implements Player {
      * accepts input.
      */
     protected void submit(Command command) {
-        throw new UnsupportedOperationException("TODO: execute the command only when the model's state accepts input");
+        if (model != null && model.acceptsInput()) {
+            command.execute();
+        }
     }
 
     @Override

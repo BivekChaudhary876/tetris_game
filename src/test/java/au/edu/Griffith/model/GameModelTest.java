@@ -133,6 +133,17 @@ class GameModelTest {
     }
 
     @Test
+    void acceptsInputOnlyWhileRunning() {
+        assertTrue(model.acceptsInput());
+
+        model.togglePause();
+        assertEquals(false, model.acceptsInput());
+
+        model.togglePause();
+        assertTrue(model.acceptsInput());
+    }
+
+    @Test
     void observersAreNotifiedWhenThePieceMoves() {
         List<GameEventType> received = new ArrayList<>();
         model.addObserver(event -> received.add(event.type()));

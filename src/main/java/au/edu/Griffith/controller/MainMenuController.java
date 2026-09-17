@@ -3,13 +3,19 @@ package au.edu.Griffith.controller;
 import au.edu.Griffith.model.Board;
 import au.edu.Griffith.model.GameConfig;
 import au.edu.Griffith.model.GameModel;
+import au.edu.Griffith.model.PlayerType;
 import au.edu.Griffith.model.tetromino.SharedSequenceGenerator;
+import au.edu.Griffith.player.Player;
+import au.edu.Griffith.player.PlayerFactory;
 import au.edu.Griffith.service.ConfigService;
 import au.edu.Griffith.view.ConfigurationScreen;
 import au.edu.Griffith.view.HighScoreScreen;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Handles what the main-menu buttons mean.
@@ -30,11 +36,28 @@ public class MainMenuController {
     /** Builds a fresh game and hands control to a {@link GameController}. */
     public void onPlay() {
         GameConfig config = ConfigService.getInstance().getConfig();
+        long seed = System.nanoTime();
+
+        List<GameController.Field> fields = new ArrayList<>();
+        fields.add(createField(config, config.getPlayerOneType(), true, seed));
+        if (config.isExtendMode()) {
+            fields.add(createField(config, config.getPlayerTwoType(), false, seed));
+        }
+
+        new GameController(navigator, fields).start();
+    }
+
+    private GameController.Field createField(GameConfig config, PlayerType type, boolean playerOne, long seed) {
         GameModel model = new GameModel(
                 new Board(config.getFieldWidth(), config.getFieldHeight()),
-                new SharedSequenceGenerator());
-
-        new GameController(navigator, model).start();
+                new SharedSequenceGenerator(seed));
+        Player player = PlayerFactory.create(type);
+        player.attach(model);
+        InputHandler keys = null;
+        if (type == PlayerType.HUMAN) {
+            keys = new InputHandler(playerOne ? InputHandler.DEFAULT_KEYS : InputHandler.PLAYER_TWO_KEYS);
+        }
+        return new GameController.Field(model, player, keys);
     }
 
     public void onConfigure() {

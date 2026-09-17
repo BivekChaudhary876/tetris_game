@@ -21,6 +21,7 @@ public class SidePanel {
 
     private final GameModel model;
     private final Runnable onBack;
+    private final String title;
 
     private final VBox root = new VBox(ScreenSizes.MENU_SPACING);
     private final Label scoreLabel = new Label("Score: 0");
@@ -28,8 +29,13 @@ public class SidePanel {
     private final BoardRenderer previewRenderer = new BoardRenderer(previewCanvas);
 
     public SidePanel(GameModel model, Runnable onBack) {
+        this(model, onBack, null);
+    }
+
+    public SidePanel(GameModel model, Runnable onBack, String title) {
         this.model = model;
         this.onBack = onBack;
+        this.title = title;
         build();
     }
 
@@ -42,6 +48,13 @@ public class SidePanel {
         root.setAlignment(Pos.TOP_CENTER);
         root.getStyleClass().add("sidebar");
 
+        if (title != null && !title.isBlank()) {
+            Label titleLabel = new Label(title);
+            titleLabel.getStyleClass().add("next-label");
+            titleLabel.setWrapText(true);
+            root.getChildren().add(titleLabel);
+        }
+
         scoreLabel.getStyleClass().add("score-label");
 
         VBox scoreBox = new VBox(scoreLabel);
@@ -49,13 +62,15 @@ public class SidePanel {
         scoreBox.setPrefSize(BOX_SIZE, BOX_SIZE);
         scoreBox.getStyleClass().add("panel-box");
 
-        Button backButton = new Button("Back");
-        backButton.setPrefWidth(ScreenSizes.BUTTON_WIDTH);
-        backButton.setFocusTraversable(false);
-        backButton.setOnAction(event -> onBack.run());
-
-        VBox buttonBox = new VBox(10, backButton);
+        VBox buttonBox = new VBox(10);
         buttonBox.setAlignment(Pos.CENTER);
+        if (onBack != null) {
+            Button backButton = new Button("Back");
+            backButton.setPrefWidth(ScreenSizes.BUTTON_WIDTH);
+            backButton.setFocusTraversable(false);
+            backButton.setOnAction(event -> onBack.run());
+            buttonBox.getChildren().add(backButton);
+        }
 
         Label nextLabel = new Label("Next Piece");
         nextLabel.getStyleClass().add("next-label");
@@ -67,7 +82,11 @@ public class SidePanel {
         VBox nextBox = new VBox(5, nextLabel, previewBox);
         nextBox.setAlignment(Pos.TOP_LEFT);
 
-        root.getChildren().addAll(scoreBox, buttonBox, nextBox);
+        root.getChildren().add(scoreBox);
+        if (!buttonBox.getChildren().isEmpty()) {
+            root.getChildren().add(buttonBox);
+        }
+        root.getChildren().add(nextBox);
     }
 
     /** Re-reads the model and updates the score and preview. */

@@ -29,6 +29,6 @@ public class HumanPlayer extends AbstractPlayer {
      * @param action what the key means
      */
     public void onAction(CommandFactory.Action action) {
-        throw new UnsupportedOperationException("TODO: submit(commands.create(action))");
+        submit(commands.create(action));
     }
 }

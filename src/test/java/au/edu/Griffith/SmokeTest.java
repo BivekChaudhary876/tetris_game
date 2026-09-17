@@ -2,6 +2,7 @@ package au.edu.Griffith;
 
 import au.edu.Griffith.controller.MainMenuController;
 import au.edu.Griffith.controller.ScreenNavigator;
+import au.edu.Griffith.service.ConfigService;
 import au.edu.Griffith.view.ConfigurationScreen;
 import au.edu.Griffith.view.HighScoreScreen;
 import au.edu.Griffith.view.MainMenuScreen;
@@ -48,6 +49,10 @@ class SmokeTest {
 
                 // The Play button path: builds the model, screen, clock and input binding.
                 menu.onPlay();
+
+                ConfigService.getInstance().getConfig().setExtendMode(true);
+                menu.onPlay();
+                ConfigService.getInstance().getConfig().setExtendMode(false);
             } catch (Throwable t) {
                 failure.set(t);
             } finally {
