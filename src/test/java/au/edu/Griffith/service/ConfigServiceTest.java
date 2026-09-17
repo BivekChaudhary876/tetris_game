@@ -57,6 +57,7 @@ class ConfigServiceTest {
         updated.setSoundEffectsOn(false);
         updated.setExtendMode(true);
         updated.setPlayerOneType(PlayerType.AI);
+        updated.setPlayerTwoType(PlayerType.EXTERNAL);
 
         service.update(updated);
 
@@ -69,6 +70,7 @@ class ConfigServiceTest {
         assertEquals(false, loaded.isSoundEffectsOn());
         assertEquals(true, loaded.isExtendMode());
         assertEquals(PlayerType.AI, loaded.getPlayerOneType());
+        assertEquals(PlayerType.EXTERNAL, loaded.getPlayerTwoType());
     }
 
     @Test
