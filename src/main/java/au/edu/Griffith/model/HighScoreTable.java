@@ -28,8 +28,10 @@ public class HighScoreTable {
      * whether the player is prompted for a name at game over.
      */
     public boolean qualifies(int score) {
-        throw new UnsupportedOperationException(
-                "TODO: true if fewer than MAX_ENTRIES entries, or score beats the lowest");
+        if (entries.size() < MAX_ENTRIES) {
+            return true;
+        }
+        return score > entries.getLast().score();
     }
 
     /**
@@ -37,17 +39,20 @@ public class HighScoreTable {
      * anything past {@link #MAX_ENTRIES}.
      */
     public void add(ScoreEntry entry) {
-        throw new UnsupportedOperationException("TODO: add, sort, truncate to MAX_ENTRIES");
+        entries.add(entry);
+        sortAndTruncate();
     }
 
     /** Replaces the whole table, used when loading from JSON. */
     public void replaceAll(List<ScoreEntry> loaded) {
-        throw new UnsupportedOperationException("TODO: clear then add all, sorted and truncated");
+        entries.clear();
+        entries.addAll(loaded);
+        sortAndTruncate();
     }
 
     /** Empties the table, behind the "Clear scores" button. */
     public void clear() {
-        throw new UnsupportedOperationException("TODO: empty the list");
+        entries.clear();
     }
 
     /**
@@ -57,6 +62,15 @@ public class HighScoreTable {
      * loop, for the "Streams" criterion.</p>
      */
     public List<ScoreEntry> entriesFor(PlayerType playerType) {
-        throw new UnsupportedOperationException("TODO: entries.stream().filter(...).toList()");
+        return entries.stream()
+                .filter(entry -> entry.playerType() == playerType)
+                .toList();
+    }
+
+    private void sortAndTruncate() {
+        entries.sort(null);
+        if (entries.size() > MAX_ENTRIES) {
+            entries.subList(MAX_ENTRIES, entries.size()).clear();
+        }
     }
 }

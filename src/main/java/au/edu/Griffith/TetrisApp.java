@@ -2,6 +2,9 @@ package au.edu.Griffith;
 
 import au.edu.Griffith.controller.MainMenuController;
 import au.edu.Griffith.controller.ScreenNavigator;
+import au.edu.Griffith.model.GameConfig;
+import au.edu.Griffith.service.AudioManager;
+import au.edu.Griffith.service.ConfigService;
 import au.edu.Griffith.view.MainMenuScreen;
 import au.edu.Griffith.view.SplashScreen;
 import javafx.application.Application;
@@ -27,9 +30,10 @@ public class TetrisApp extends Application {
     public void start(Stage stage) {
         ScreenNavigator navigator = new ScreenNavigator(stage);
 
-        // TODO: once ConfigService.getConfig() is implemented, load the saved
-        //       settings here and push the music/sound flags into AudioManager
-        //       before the first screen appears.
+        GameConfig config = ConfigService.getInstance().getConfig();
+        AudioManager audio = AudioManager.getInstance();
+        audio.setMusicOn(config.isMusicOn());
+        audio.setEffectsOn(config.isSoundEffectsOn());
 
         SplashScreen splash = new SplashScreen();
         splash.setOnFinished(() ->

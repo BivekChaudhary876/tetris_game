@@ -7,9 +7,11 @@ import au.edu.Griffith.service.AudioManager;
 import au.edu.Griffith.view.GameScreen;
 import au.edu.Griffith.view.MainMenuScreen;
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 
 /**
@@ -30,6 +32,7 @@ public class GameController {
 
     private GameScreen screen;
     private AnimationTimer clock;
+    private boolean highScorePrompted;
 
     public GameController(ScreenNavigator navigator, GameModel model) {
         this.navigator = navigator;
@@ -75,6 +78,9 @@ public class GameController {
 
                 model.tick(elapsedMs);
                 screen.render();
+                if (model.getStatus() == GameStatus.GAME_OVER) {
+                    offerHighScoreOnce();
+                }
             }
         };
         clock.start();
@@ -117,6 +123,7 @@ public class GameController {
 
     /** Restarts the field with a fresh piece sequence, behind the Replay button. */
     public void restart() {
+        highScorePrompted = false;
         model.restart();
         screen.render();
     }

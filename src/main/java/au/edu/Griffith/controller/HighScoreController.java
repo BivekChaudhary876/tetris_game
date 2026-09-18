@@ -1,29 +1,21 @@
 package au.edu.Griffith.controller;
 
-import au.edu.Griffith.model.PlayerType;
 import au.edu.Griffith.model.ScoreEntry;
+import au.edu.Griffith.service.HighScoreService;
+import au.edu.Griffith.view.HighScoreScreen;
 import au.edu.Griffith.view.MainMenuScreen;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 
 import java.util.List;
 
 /**
- * Supplies the high-score screen with its rows.
+ * Supplies the high-score screen with its rows, and handles clear.
  *
- * <p>The entries are the fixed placeholder list from Milestone 1. Recording real
- * results and persisting them is a later milestone requirement;
- * {@link au.edu.Griffith.service.HighScoreService} is the seam it will be built
- * on.</p>
+ * <p>Rows come from {@link HighScoreService} — the same table a finished game
+ * writes into — so the screen shows persisted scores, not placeholders.</p>
  */
 public class HighScoreController {
-
-    /** The placeholder table shown in Milestone 1. */
-    private static final List<ScoreEntry> PLACEHOLDER_SCORES = List.of(
-            new ScoreEntry("Alex", 12000, PlayerType.HUMAN),
-            new ScoreEntry("Sam", 9800, PlayerType.HUMAN),
-            new ScoreEntry("Jordan", 7600, PlayerType.HUMAN),
-            new ScoreEntry("Riley", 5400, PlayerType.HUMAN),
-            new ScoreEntry("Casey", 3200, PlayerType.HUMAN),
-            new ScoreEntry("Morgan", 1500, PlayerType.HUMAN));
 
     private final ScreenNavigator navigator;
 
@@ -33,10 +25,28 @@ public class HighScoreController {
 
     /** The table, best first. */
     public List<ScoreEntry> getEntries() {
-        return PLACEHOLDER_SCORES;
+        return HighScoreService.getInstance().getTable().getEntries();
     }
 
     public void onBack() {
         navigator.show(new MainMenuScreen(new MainMenuController(navigator)));
+    }
+
+    /** Confirms, then empties the persisted table and rebuilds this screen. */
+    public void onClear() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm");
+        alert.setHeaderText("Clear all high scores?");
+        alert.initOwner(navigator.getStage());
+
+        ButtonType yes = new ButtonType("Yes");
+        alert.getButtonTypes().setAll(yes, ButtonType.CANCEL);
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == yes) {
+                HighScoreService.getInstance().clearAll();
+                navigator.show(new HighScoreScreen(this));
+            }
+        });
     }
 }

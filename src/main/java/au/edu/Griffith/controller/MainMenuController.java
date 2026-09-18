@@ -1,6 +1,7 @@
 package au.edu.Griffith.controller;
 
 import au.edu.Griffith.model.Board;
+import au.edu.Griffith.model.GameConfig;
 import au.edu.Griffith.model.GameModel;
 import au.edu.Griffith.model.tetromino.SharedSequenceGenerator;
 import au.edu.Griffith.service.AudioManager;

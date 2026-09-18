@@ -1,6 +1,8 @@
 package au.edu.Griffith.view;
 
 import au.edu.Griffith.controller.ConfigurationController;
+import au.edu.Griffith.model.GameConfig;
+import au.edu.Griffith.model.PlayerType;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -16,6 +18,9 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import au.edu.Griffith.model.GameConfig;
 import au.edu.Griffith.model.PlayerType;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
