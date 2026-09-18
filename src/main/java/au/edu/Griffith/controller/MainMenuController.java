@@ -1,16 +1,15 @@
 package au.edu.Griffith.controller;
 
 import au.edu.Griffith.model.Board;
+import au.edu.Griffith.model.GameConfig;
 import au.edu.Griffith.model.GameModel;
 import au.edu.Griffith.model.tetromino.SharedSequenceGenerator;
-import au.edu.Griffith.service.AudioManager;
+import au.edu.Griffith.service.ConfigService;
 import au.edu.Griffith.view.ConfigurationScreen;
 import au.edu.Griffith.view.HighScoreScreen;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import au.edu.Griffith.model.GameConfig;
-import au.edu.Griffith.service.ConfigService;
 
 /**
  * Handles what the main-menu buttons mean.
@@ -29,11 +28,10 @@ public class MainMenuController {
     }
 
     /** Builds a fresh game at the configured field size and level. */
-
     public void onPlay() {
         // Read when Play is pressed, so settings changed this session apply.
         GameConfig config = ConfigService.getInstance().getConfig();
-        //implements the new width height and level
+
         GameModel model = new GameModel(
                 new Board(config.getFieldWidth(), config.getFieldHeight()),
                 new SharedSequenceGenerator(),
@@ -43,11 +41,15 @@ public class MainMenuController {
     }
 
     public void onConfigure() {
-        navigator.show(new ConfigurationScreen(new ConfigurationController(navigator)));
+        navigator.show(
+                new ConfigurationScreen(
+                        new ConfigurationController(navigator)));
     }
 
     public void onHighScores() {
-        navigator.show(new HighScoreScreen(new HighScoreController(navigator)));
+        navigator.show(
+                new HighScoreScreen(
+                        new HighScoreController(navigator)));
     }
 
     /** Asks for confirmation, then shuts down. */

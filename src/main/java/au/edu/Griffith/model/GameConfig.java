@@ -119,29 +119,57 @@ public class GameConfig {
      *
      * @throws IllegalStateException if any setting is out of range
      */
-    // fieldWidth and height range updated validated
     public void validate() {
-        requireInRange("Field width", fieldWidth, MIN_WIDTH, MAX_WIDTH);
-        requireInRange("Field height", fieldHeight, MIN_HEIGHT, MAX_HEIGHT);
-        requireInRange("Starting level", startingLevel, MIN_LEVEL, MAX_LEVEL);
-        requireInRange("Volume", volume, MIN_VOLUME, MAX_VOLUME);
+        requireInRange(
+                "Field width",
+                fieldWidth,
+                MIN_WIDTH,
+                MAX_WIDTH);
+
+        requireInRange(
+                "Field height",
+                fieldHeight,
+                MIN_HEIGHT,
+                MAX_HEIGHT);
+
+        requireInRange(
+                "Starting level",
+                startingLevel,
+                MIN_LEVEL,
+                MAX_LEVEL);
+
+        requireInRange(
+                "Volume",
+                volume,
+                MIN_VOLUME,
+                MAX_VOLUME);
 
         if (playerOneType == null || playerTwoType == null) {
-            throw new IllegalStateException("Player types must not be null");
+            throw new IllegalStateException(
+                    "Player types must not be null");
         }
     }
 
-    private static void requireInRange(String name, int value, int min, int max) {
+    private static void requireInRange(
+            String name,
+            int value,
+            int min,
+            int max) {
+
         if (value < min || value > max) {
             throw new IllegalStateException(
-                    name + " must be between " + min + " and " + max + " but was " + value);
+                    name + " must be between "
+                            + min + " and " + max
+                            + " but was " + value);
         }
     }
 
-    /** Deep copy, so the configuration screen can edit a draft and discard it on Cancel. */
-    // fieldWidth and height copy() so the config screen can edit a draft.
+    /**
+     * Deep copy, so the configuration screen can edit a draft and discard it on Cancel.
+     */
     public GameConfig copy() {
         GameConfig c = new GameConfig();
+
         c.fieldWidth = this.fieldWidth;
         c.fieldHeight = this.fieldHeight;
         c.startingLevel = this.startingLevel;
@@ -151,6 +179,7 @@ public class GameConfig {
         c.extendMode = this.extendMode;
         c.playerOneType = this.playerOneType;
         c.playerTwoType = this.playerTwoType;
+
         return c;
     }
 }

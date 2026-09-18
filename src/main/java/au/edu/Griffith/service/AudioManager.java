@@ -37,7 +37,8 @@ public final class AudioManager {
 
     private static final String MUSIC = "/audios/background.mp3";
 
-    private static final Map<Effect, String> EFFECT_FILES = new EnumMap<>(Effect.class);
+    private static final Map<Effect, String> EFFECT_FILES =
+            new EnumMap<>(Effect.class);
 
     static {
         EFFECT_FILES.put(Effect.MOVE, "/audios/move-turn.wav");
@@ -52,7 +53,8 @@ public final class AudioManager {
         private static final AudioManager INSTANCE = new AudioManager();
     }
 
-    private final Map<Effect, AudioClip> clips = new EnumMap<>(Effect.class);
+    private final Map<Effect, AudioClip> clips =
+            new EnumMap<>(Effect.class);
 
     private MediaPlayer musicPlayer;
     private boolean musicOn = true;
@@ -65,10 +67,14 @@ public final class AudioManager {
     private AudioManager() {
         for (Map.Entry<Effect, String> entry : EFFECT_FILES.entrySet()) {
             URL url = getClass().getResource(entry.getValue());
+
             if (url != null) {
-                clips.put(entry.getKey(), new AudioClip(url.toExternalForm()));
+                clips.put(
+                        entry.getKey(),
+                        new AudioClip(url.toExternalForm()));
             } else {
-                System.err.println("Missing audio resource: " + entry.getValue());
+                System.err.println(
+                        "Missing audio resource: " + entry.getValue());
             }
         }
     }
@@ -92,12 +98,15 @@ public final class AudioManager {
         }
 
         URL url = getClass().getResource(MUSIC);
+
         if (url == null) {
             System.err.println("Missing audio resource: " + MUSIC);
             return;
         }
 
-        musicPlayer = new MediaPlayer(new Media(url.toExternalForm()));
+        musicPlayer = new MediaPlayer(
+                new Media(url.toExternalForm()));
+
         musicPlayer.setCycleCount(MediaPlayer.INDEFINITE);
         musicPlayer.setVolume(volume);
         musicPlayer.play();
@@ -128,7 +137,9 @@ public final class AudioManager {
         if (!effectsOn) {
             return;
         }
+
         AudioClip clip = clips.get(effect);
+
         if (clip != null) {
             clip.play(volume);
         }
@@ -137,6 +148,7 @@ public final class AudioManager {
     /** Behind the {@code M} key and the configuration checkbox. */
     public void setMusicOn(boolean musicOn) {
         this.musicOn = musicOn;
+
         if (musicOn) {
             startMusic();
         } else {
@@ -168,7 +180,9 @@ public final class AudioManager {
      * @param percent 0 to 100, clamped
      */
     public void setVolume(int percent) {
-        this.volume = Math.max(0, Math.min(100, percent)) / 100.0;
+        this.volume =
+                Math.max(0, Math.min(100, percent)) / 100.0;
+
         if (musicPlayer != null) {
             musicPlayer.setVolume(this.volume);
         }

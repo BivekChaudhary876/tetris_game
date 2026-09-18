@@ -43,10 +43,13 @@ public class JsonRepository<T> implements Repository<T> {
         if (!exists()) {
             return Optional.empty();
         }
+
         try {
             return Optional.of(mapper.readValue(path.toFile(), type));
         } catch (IOException e) {
-            System.err.println("Could not read " + path + ", falling back to defaults: " + e.getMessage());
+            System.err.println(
+                    "Could not read " + path +
+                            ", falling back to defaults: " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -61,13 +64,24 @@ public class JsonRepository<T> implements Repository<T> {
     @Override
     public void save(T value) {
         try {
-            Files.createDirectories(path.getParent());
+            Path parent = path.getParent();
+
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
 
             Path temp = path.resolveSibling(path.getFileName() + ".tmp");
-            mapper.writerWithDefaultPrettyPrinter().writeValue(temp.toFile(), value);
-            Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING);
+
+            mapper.writerWithDefaultPrettyPrinter()
+                    .writeValue(temp.toFile(), value);
+
+            Files.move(
+                    temp,
+                    path,
+                    StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new UncheckedIOException("Could not save " + path, e);
+            throw new UncheckedIOException(
+                    "Could not save " + path, e);
         }
     }
 

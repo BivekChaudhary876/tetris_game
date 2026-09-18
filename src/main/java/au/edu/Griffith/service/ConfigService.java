@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Singleton owning the one live {@link GameConfig} and its {@code config.json} file.
@@ -29,11 +30,13 @@ import java.util.Objects;
  */
 public final class ConfigService {
 
-    private static final Path CONFIG_FILE = Path.of("data", "config.json");
+    private static final Path CONFIG_FILE =
+            Path.of("data", "config.json");
 
     /** Not loaded until getInstance() is first called — this is what makes it lazy. */
     private static final class Holder {
-        private static final ConfigService INSTANCE = new ConfigService();
+        private static final ConfigService INSTANCE =
+                new ConfigService();
     }
 
     private final Repository<GameConfig> repository;
@@ -42,8 +45,18 @@ public final class ConfigService {
     private volatile GameConfig config;
 
     private ConfigService() {
-        this.repository = new JsonRepository<>(CONFIG_FILE, new TypeReference<GameConfig>() {
-        });
+        this(new JsonRepository<>(
+                CONFIG_FILE,
+                new TypeReference<GameConfig>() {
+                }));
+    }
+
+    /**
+     * Visible for tests so they can point at a temp file instead of
+     * {@code data/config.json}.
+     */
+    ConfigService(Repository<GameConfig> repository) {
+        this.repository = repository;
     }
 
     public static ConfigService getInstance() {
@@ -53,22 +66,37 @@ public final class ConfigService {
     /** The live settings, loaded from disk on first access, defaults if absent. */
     public GameConfig getConfig() {
         GameConfig local = config;
+
         if (local == null) {
             synchronized (this) {
                 local = config;
+
                 if (local == null) {
-                    local = repository.load().orElseGet(GameConfig::new);
+                    Optional<GameConfig> loaded = repository.load();
+
+                    if (loaded.isPresent()) {
+                        local = loaded.get();
+                    } else {
+                        local = new GameConfig();
+                        repository.save(local);
+                    }
+
                     config = local;
                 }
             }
         }
+
         return local;
     }
 
     /** Validates and replaces the live settings, then writes them to disk. */
     public void update(GameConfig updated) {
-        Objects.requireNonNull(updated, "updated config must not be null");
+        Objects.requireNonNull(
+                updated,
+                "updated config must not be null");
+
         updated.validate();
+
         synchronized (this) {
             this.config = updated;
             repository.save(updated);

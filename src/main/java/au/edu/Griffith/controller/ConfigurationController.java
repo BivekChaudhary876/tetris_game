@@ -14,9 +14,8 @@ import au.edu.Griffith.view.MainMenuScreen;
  * <p>The screen edits a draft rather than the live {@link GameConfig} so a
  * partially-edited, invalid state is never visible to the running game.</p>
  *
- * <p>Audio settings are the exception to that: they also reach
- * {@link AudioManager} as they change, so the player hears the effect of a
- * toggle or a volume move straight away rather than on the next game.</p>
+ * <p>Audio settings are also applied immediately so the player hears the effect
+ * of a toggle or volume change straight away.</p>
  */
 public class ConfigurationController {
 
@@ -25,7 +24,9 @@ public class ConfigurationController {
 
     public ConfigurationController(ScreenNavigator navigator) {
         this.navigator = navigator;
-        this.draft = ConfigService.getInstance().getConfig().copy();
+
+        GameConfig current = ConfigService.getInstance().getConfig();
+        this.draft = current.copy();
     }
 
     /** The values the screen should display when it opens. */
@@ -33,7 +34,6 @@ public class ConfigurationController {
         return draft;
     }
 
-    // field width and field height is being updated
     public void setFieldWidth(int value) {
         draft.setFieldWidth(value);
     }
@@ -56,7 +56,7 @@ public class ConfigurationController {
         AudioManager.getInstance().setEffectsOn(on);
     }
 
-    /** Volume for music and effects, 0 to 100. Applied live so the slider is audible. */
+    /** Volume for music and effects, from 0 to 100. */
     public void setVolume(int value) {
         draft.setVolume(value);
         AudioManager.getInstance().setVolume(value);
@@ -71,10 +71,18 @@ public class ConfigurationController {
         draft.setExtendMode(on);
     }
 
-
-    //saves the new settings
+    /**
+     * Validates and saves the current configuration, applies the final
+     * audio settings, then returns to the main menu.
+     */
     public void onBack() {
         ConfigService.getInstance().update(draft);
+
+        AudioManager audio = AudioManager.getInstance();
+        audio.setMusicOn(draft.isMusicOn());
+        audio.setEffectsOn(draft.isSoundEffectsOn());
+        audio.setVolume(draft.getVolume());
+
         navigator.show(new MainMenuScreen(new MainMenuController(navigator)));
     }
 }
