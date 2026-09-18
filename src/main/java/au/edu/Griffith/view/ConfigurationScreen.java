@@ -16,16 +16,40 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import au.edu.Griffith.model.GameConfig;
+import au.edu.Griffith.model.PlayerType;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
- * The settings screen: field size, level, music, sound, AI play and extend mode.
+ * The settings screen: field size, level, volume, music, sound, AI play and
+ * extend mode.
  *
- * <p>Edits a draft {@link GameConfig}. Back asks the controller to persist it.</p>
+ * <p>The screen opens showing the current settings and reports every change to
+ * {@link ConfigurationController}, which holds them in a draft and commits that
+ * draft to disk when the user navigates back. The screen itself stores nothing
+ * and knows nothing about persistence.</p>
  */
 public class ConfigurationScreen extends AbstractScreen {
+
+    // Bounds come from the model so the sliders and GameConfig.validate() cannot drift apart.
+    private static final int WIDTH_MIN = GameConfig.MIN_WIDTH;
+    private static final int WIDTH_MAX = GameConfig.MAX_WIDTH;
+
+    private static final int HEIGHT_MIN = GameConfig.MIN_HEIGHT;
+    private static final int HEIGHT_MAX = GameConfig.MAX_HEIGHT;
+
+    private static final int LEVEL_MIN = GameConfig.MIN_LEVEL;
+    private static final int LEVEL_MAX = GameConfig.MAX_LEVEL;
+
+    private static final int VOLUME_MIN = GameConfig.MIN_VOLUME;
+    private static final int VOLUME_MAX = GameConfig.MAX_VOLUME;
+
+    /** Volume moves in tens, so its scale shows 0, 10, 20 … rather than every value. */
+    private static final int VOLUME_STEP = 10;
 
     private static final double SLIDER_WIDTH = 260;
 
@@ -62,20 +86,29 @@ public class ConfigurationScreen extends AbstractScreen {
         valueColumn.setHalignment(HPos.RIGHT);
         settings.getColumnConstraints().addAll(nameColumn, controlColumn, valueColumn);
 
+        // Every control starts at the saved value, not a hardcoded one.
         GameConfig draft = controller.getDraft();
-        addSliderRow("Field Width (No of cells):",
-                GameConfig.MIN_WIDTH, GameConfig.MAX_WIDTH, draft.getFieldWidth(), draft::setFieldWidth);
-        addSliderRow("Field Height (No of cells):",
-                GameConfig.MIN_HEIGHT, GameConfig.MAX_HEIGHT, draft.getFieldHeight(), draft::setFieldHeight);
-        addSliderRow("Game Level:",
-                GameConfig.MIN_LEVEL, GameConfig.MAX_LEVEL, draft.getStartingLevel(), draft::setStartingLevel);
-        addCheckBoxRow("Music (On/Off):", draft.isMusicOn(), draft::setMusicOn);
-        addCheckBoxRow("Sound Effect (On/Off):", draft.isSoundEffectsOn(), draft::setSoundEffectsOn);
-        addCheckBoxRow("AI Play (On/Off):",
-                draft.getPlayerOneType() == PlayerType.AI,
-                enabled -> draft.setPlayerOneType(enabled ? PlayerType.AI : PlayerType.HUMAN));
-        addCheckBoxRow("Extend Mode (On/Off):", draft.isExtendMode(), draft::setExtendMode);
 
+        // field width is now being get in the drafts
+        addSliderRow("Field Width (No of cells):", WIDTH_MIN, WIDTH_MAX,
+                draft.getFieldWidth(), controller::setFieldWidth);
+        addSliderRow("Field Height (No of cells):", HEIGHT_MIN, HEIGHT_MAX,
+                draft.getFieldHeight(), controller::setFieldHeight);
+        addSliderRow("Game Level:", LEVEL_MIN, LEVEL_MAX,
+                draft.getStartingLevel(), controller::setStartingLevel);
+        addSliderRow("Volume (%):", VOLUME_MIN, VOLUME_MAX,
+                draft.getVolume(), controller::setVolume, VOLUME_STEP);
+
+        addCheckBoxRow("Music (On/Off):",
+                draft.isMusicOn(), controller::setMusic);
+        addCheckBoxRow("Sound Effect (On/Off):",
+                draft.isSoundEffectsOn(), controller::setSoundEffects);
+        addCheckBoxRow("AI Play (On/Off):",
+                draft.getPlayerTwoType() == PlayerType.AI, controller::setAiPlay);
+        addCheckBoxRow("Extend Mode (On/Off):",
+                draft.isExtendMode(), controller::setExtendMode);
+
+        //runs the onBack functions
         Button backButton = new Button("Back");
         backButton.setPrefWidth(ScreenSizes.BUTTON_WIDTH);
         backButton.setOnAction(event -> controller.onBack());
@@ -88,31 +121,42 @@ public class ConfigurationScreen extends AbstractScreen {
         return layout;
     }
 
+    /** Adds a slider whose scale shows every value, which suits the small ranges. */
+    private void addSliderRow(String text, int min, int max, int initial, IntConsumer onChange) {
+        addSliderRow(text, min, max, initial, onChange, 1);
+    }
+
     /**
      * Adds one slider setting: name on the left, the slider in the middle and the
      * live value on the right.
+     *
+     * @param onChange   notified with the new whole-number value on every move
+     * @param scaleStep  gap between the numbers drawn under the slider; a wide
+     *                   range such as volume needs more than 1 or the labels are
+     *                   too dense to read
      */
-    private void addSliderRow(String text, int min, int max, int initial, IntConsumer onChange) {
+    private void addSliderRow(String text, int min, int max, int initial,
+                              IntConsumer onChange, int scaleStep) {
         Label name = new Label(text);
 
         Slider slider = new Slider(min, max, initial);
         slider.setPrefWidth(SLIDER_WIDTH);
-        slider.setMajorTickUnit(1);
+        slider.setMajorTickUnit(scaleStep);
         slider.setMinorTickCount(0);
         slider.setSnapToTicks(true);
-        slider.setBlockIncrement(1);
+        slider.setBlockIncrement(scaleStep);
 
         Label value = new Label(String.valueOf(initial));
         value.getStyleClass().add("value-label");
 
-        // Sliders report doubles, so round back to a whole number of cells.
+        // Sliders report doubles, so round back to a whole number.
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             int rounded = (int) Math.round(newValue.doubleValue());
             value.setText(String.valueOf(rounded));
             onChange.accept(rounded);
         });
 
-        VBox control = new VBox(2, slider, buildScale(min, max));
+        VBox control = new VBox(2, slider, buildScale(min, max, scaleStep));
         control.setPrefWidth(SLIDER_WIDTH);
 
         settings.add(name, 0, nextRow);
@@ -127,12 +171,15 @@ public class ConfigurationScreen extends AbstractScreen {
      * <p>The slider's own {@code setShowTickLabels()} draws these through a nested
      * axis that renders near-black whatever style is applied — unreadable on this
      * dark panel. Laying the numbers out here keeps them under our control.</p>
+     *
+     * @param step gap between the numbers drawn, so a 0–100 range shows eleven
+     *             labels rather than a hundred and one
      */
-    private HBox buildScale(int min, int max) {
+    private HBox buildScale(int min, int max, int step) {
         HBox scale = new HBox();
         scale.setPrefWidth(SLIDER_WIDTH);
 
-        for (int i = min; i <= max; i++) {
+        for (int i = min; i <= max; i += step) {
             Label tick = new Label(String.valueOf(i));
             tick.getStyleClass().add("tick-label");
 
@@ -150,6 +197,8 @@ public class ConfigurationScreen extends AbstractScreen {
     /**
      * Adds one on/off setting: name on the left, the tick box in the middle and
      * the "On"/"Off" text on the right.
+     *
+     * @param onChange notified with the new state every time the box is ticked
      */
     private void addCheckBoxRow(String text, boolean selected, Consumer<Boolean> onChange) {
         Label name = new Label(text);
