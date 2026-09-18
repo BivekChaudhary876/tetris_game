@@ -4,9 +4,9 @@ import au.edu.Griffith.model.GameModel;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.layout.HBox;
-
-import java.util.ArrayList;
-import java.util.List;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import au.edu.Griffith.service.AudioManager;
 
 /**
  * The playing screen: one field, or two side-by-side in extend mode.
@@ -78,6 +78,34 @@ public class GameScreen extends AbstractScreen {
 
     /** Repaints every field. */
     public void render() {
-        fields.forEach(PlayFieldView::render);
+        renderer.render(model.getBoard(), model.getActivePiece(), model.getFallProgress());
+    }
+
+    @Override
+    public void onGameEvent(GameEvent event) {
+        AudioManager audio = AudioManager.getInstance();
+
+        switch (event.type()) {
+            case SCORE_CHANGED, PIECE_SPAWNED -> sidePanel.refresh();
+            case LEVEL_CHANGED -> {
+                sidePanel.refresh();
+                audio.playEffect(AudioManager.Effect.LEVEL_UP);
+            }
+            case LINES_CLEARED -> audio.playEffect(AudioManager.Effect.LINE_CLEAR);
+            case STATUS_CHANGED -> updateOverlays();
+            case PIECE_MOVED, PIECE_LOCKED -> {
+                // The per-frame render already covers these.
+            }
+        }
+    }
+
+    private void updateOverlays() {
+        GameStatus status = model.getStatus();
+        pausedLabel.setVisible(status == GameStatus.PAUSED);
+        gameOverBox.setVisible(status == GameStatus.GAME_OVER);
+
+        if (status == GameStatus.GAME_OVER) {
+            AudioManager.getInstance().playEffect(AudioManager.Effect.GAME_OVER);
+        }
     }
 }
