@@ -103,6 +103,11 @@ public class GameModel extends Observable implements Movable {
         return state.status();
     }
 
+    /** Whether a player may issue movement commands in the current state. */
+    public boolean acceptsInput() {
+        return state.acceptsInput();
+    }
+
     /** Sub-tile fall offset, 0 to 1, for smooth rendering. */
     public double getFallProgress() {
         return fallProgress;

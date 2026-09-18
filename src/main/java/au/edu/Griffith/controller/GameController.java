@@ -5,6 +5,8 @@ import au.edu.Griffith.model.GameModel;
 import au.edu.Griffith.model.GameStatus;
 import au.edu.Griffith.model.PlayerType;
 import au.edu.Griffith.model.ScoreEntry;
+import au.edu.Griffith.player.HumanPlayer;
+import au.edu.Griffith.player.Player;
 import au.edu.Griffith.service.AudioManager;
 import au.edu.Griffith.service.HighScoreService;
 import au.edu.Griffith.view.GameScreen;
@@ -17,75 +19,168 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Drives a play session: owns the clock and routes input.
- *
- * <p>The <strong>Controller</strong> of MVC, and the class that replaces the
- * middle of Milestone 1's {@code Tetris}. It is the only place that holds both a
- * {@link GameModel} and a {@link GameScreen}; the model does not know the screen
- * exists and the screen reaches the model only through its Observer
- * subscription.</p>
+ * Drives a play session: owns the clock and routes input for one or two fields.
  */
 public class GameController {
 
+    /** One board in the session, with the player that drives it. */
+    public static final class Field {
+
+        private final GameModel model;
+        private final Player player;
+        private final InputHandler keys;
+        private boolean highScorePrompted;
+
+        public Field(
+                GameModel model,
+                Player player,
+                InputHandler keys) {
+
+            this.model = model;
+            this.player = player;
+            this.keys = keys;
+        }
+
+        public GameModel getModel() {
+            return model;
+        }
+
+        public Player getPlayer() {
+            return player;
+        }
+    }
+
     private final ScreenNavigator navigator;
-    private final GameModel model;
-    private final InputHandler inputHandler =
-            new InputHandler(InputHandler.DEFAULT_KEYS);
-    private final CommandFactory commands;
+    private final List<Field> fields;
 
     private GameScreen screen;
     private AnimationTimer clock;
-    private boolean highScorePrompted;
 
-    public GameController(ScreenNavigator navigator, GameModel model) {
-        this.navigator = navigator;
-        this.model = model;
-        this.commands = new CommandFactory(model);
-    }
+    /**
+     * Compatibility constructor for a single human-controlled field.
+     */
+    public GameController(
+            ScreenNavigator navigator,
+            GameModel model) {
 
-    public GameModel getModel() {
-        return model;
-    }
+        this(
+                navigator,
+                List.of(
+                        new Field(
+                                model,
+                                new HumanPlayer(),
+                                new InputHandler(
+                                        InputHandler.DEFAULT_KEYS))));
 
-    /** Builds the screen, starts the game, the music and the clock. */
-    public void start() {
-        screen = new GameScreen(model, this::onBackToMenu, this::restart);
-        navigator.show(screen);
-
-        bindInput(screen.getRoot().getScene());
-        model.start();
-        AudioManager.getInstance().startMusic();
-        startClock();
+        fields.getFirst().player.attach(model);
     }
 
     /**
-     * The per-frame tick.
-     *
-     * <p>Ported from Milestone 1's {@code AnimationTimer}, including resetting the
-     * timestamp while paused so that un-pausing does not hand the model one huge
-     * elapsed time and drop the piece several rows at once.</p>
+     * Creates a controller for one or more playing fields.
      */
+    public GameController(
+            ScreenNavigator navigator,
+            List<Field> fields) {
+
+        this.navigator = navigator;
+        this.fields = List.copyOf(fields);
+    }
+
+    public GameModel getModel() {
+        return fields.getFirst().model;
+    }
+
+    /**
+     * Builds the screen, starts every field, starts the music and starts
+     * the game clock.
+     */
+    public void start() {
+        List<GameModel> models = new ArrayList<>();
+        List<String> titles = new ArrayList<>();
+        List<Runnable> replays = new ArrayList<>();
+
+        for (int i = 0; i < fields.size(); i++) {
+            Field field = fields.get(i);
+
+            models.add(field.model);
+            titles.add(
+                    fieldTitle(
+                            i,
+                            field.player.getType()));
+            replays.add(fieldRestart(field));
+        }
+
+        screen = new GameScreen(
+                models,
+                titles,
+                this::onBackToMenu,
+                replays);
+
+        navigator.show(screen);
+
+        bindInput(screen.getRoot().getScene());
+
+        for (Field field : fields) {
+            field.model.start();
+        }
+
+        AudioManager.getInstance().startMusic();
+
+        startClock();
+    }
+
     private void startClock() {
         clock = new AnimationTimer() {
+
             private long last;
 
             @Override
             public void handle(long now) {
-                if (model.getStatus() == GameStatus.PAUSED || last == 0) {
+                if (last == 0) {
                     last = now;
                     return;
                 }
 
-                double elapsedMs = (now - last) / 1_000_000.0;
+                boolean anyRunning = false;
+
+                for (Field field : fields) {
+                    if (field.model.getStatus()
+                            == GameStatus.RUNNING) {
+
+                        anyRunning = true;
+                        break;
+                    }
+                }
+
+                double elapsedMs =
+                        (now - last) / 1_000_000.0;
+
                 last = now;
 
-                model.tick(elapsedMs);
-                screen.render();
+                if (anyRunning) {
+                    for (Field field : fields) {
+                        if (field.model.getStatus()
+                                == GameStatus.RUNNING) {
 
-                if (model.getStatus() == GameStatus.GAME_OVER) {
-                    offerHighScoreOnce();
+                            field.model.tick(elapsedMs);
+                            field.player.update(elapsedMs);
+                        }
+                    }
                 }
+
+                for (Field field : fields) {
+                    if (field.model.getStatus()
+                            == GameStatus.GAME_OVER) {
+
+                        offerHighScoreOnce(field);
+                    }
+                }
+
+                screen.render();
             }
         };
 
@@ -93,134 +188,240 @@ public class GameController {
     }
 
     /**
-     * Routes a key press: {@code P} toggles pause, the rest become movement
-     * commands when the current state accepts input.
+     * Routes key presses to the appropriate field.
      *
-     * <p>The move sound fires here rather than on the model's {@code PIECE_MOVED}
-     * event, because that event also fires on every gravity step and would give a
-     * constant tick rather than a response to the player.</p>
+     * <p>{@code P} toggles pause for all active fields. Other keys are
+     * translated through each human player's configured key bindings.</p>
      */
     private void bindInput(Scene scene) {
         scene.setOnKeyPressed(event -> {
-            AudioManager audio = AudioManager.getInstance();
+            AudioManager audio =
+                    AudioManager.getInstance();
 
             if (event.getCode() == KeyCode.P) {
-                model.togglePause();
+                boolean shouldPause = false;
 
-                if (model.getStatus() == GameStatus.PAUSED) {
+                for (Field field : fields) {
+                    if (field.model.getStatus()
+                            == GameStatus.RUNNING) {
+
+                        shouldPause = true;
+                        break;
+                    }
+                }
+
+                for (Field field : fields) {
+                    if (shouldPause
+                            && field.model.getStatus()
+                            == GameStatus.RUNNING) {
+
+                        field.model.togglePause();
+
+                    } else if (!shouldPause
+                            && field.model.getStatus()
+                            == GameStatus.PAUSED) {
+
+                        field.model.togglePause();
+                    }
+                }
+
+                if (shouldPause) {
                     audio.pauseMusic();
                 } else {
                     audio.resumeMusic();
                 }
 
+                screen.render();
                 return;
             }
 
-            CommandFactory.Action action =
-                    inputHandler.resolve(event.getCode());
+            for (Field field : fields) {
+                if (field.keys == null
+                        || !(field.player instanceof HumanPlayer human)) {
+                    continue;
+                }
 
-            if (action != null && acceptsInput()) {
-                commands.create(action).execute();
-                audio.playEffect(AudioManager.Effect.MOVE);
-                screen.render();
+                CommandFactory.Action action =
+                        field.keys.resolve(event.getCode());
+
+                if (action != null) {
+                    human.onAction(action);
+                    audio.playEffect(
+                            AudioManager.Effect.MOVE);
+                }
             }
+
+            screen.render();
         });
     }
 
-    private boolean acceptsInput() {
-        return model.getStatus() == GameStatus.RUNNING;
+    private Runnable fieldRestart(Field field) {
+        return () -> {
+            field.highScorePrompted = false;
+            field.model.restart();
+            screen.render();
+        };
     }
 
-    /** Restarts the field with a fresh piece sequence, behind the Replay button. */
-    public void restart() {
-        highScorePrompted = false;
-        model.restart();
-        screen.render();
-    }
-
-    /**
-     * Once per finished game: if the score earns a top-ten place, ask for a name
-     * and persist it. Cancel or a blank name skips the record.
-     */
-    private void offerHighScoreOnce() {
-        if (highScorePrompted) {
+    private void offerHighScoreOnce(Field field) {
+        if (field.highScorePrompted) {
             return;
         }
 
-        highScorePrompted = true;
-        Platform.runLater(this::promptForHighScore);
+        field.highScorePrompted = true;
+
+        Platform.runLater(
+                () -> promptForHighScore(field));
     }
 
-    private void promptForHighScore() {
-        int points = model.getScore().getPoints();
+    private void promptForHighScore(Field field) {
+        int points =
+                field.model.getScore().getPoints();
 
-        if (!HighScoreService.getInstance().qualifies(points)) {
+        if (!HighScoreService.getInstance()
+                .qualifies(points)) {
+
             return;
         }
 
-        TextInputDialog dialog = new TextInputDialog();
+        TextInputDialog dialog =
+                new TextInputDialog();
+
         dialog.setTitle("High Score");
         dialog.setHeaderText(
-                "Score: " + points + " — you made the top 10!");
-        dialog.setContentText("Enter your name:");
-        dialog.initOwner(navigator.getStage());
+                "Score: " + points
+                        + " — you made the top 10!");
+        dialog.setContentText(
+                "Enter your name:");
+
+        dialog.initOwner(
+                navigator.getStage());
 
         dialog.showAndWait()
                 .map(String::trim)
                 .filter(name -> !name.isEmpty())
                 .ifPresent(name ->
-                        HighScoreService.getInstance()
-                                .record(new ScoreEntry(
-                                        name,
-                                        points,
-                                        PlayerType.HUMAN)));
+                        HighScoreService
+                                .getInstance()
+                                .record(
+                                        new ScoreEntry(
+                                                name,
+                                                points,
+                                                field.player.getType())));
     }
 
-    /** Stops the clock and the music. */
+    /**
+     * Stops the clock, stops music and disposes all players.
+     */
     public void stop() {
         if (clock != null) {
             clock.stop();
         }
 
-        AudioManager.getInstance().stopMusic();
+        AudioManager.getInstance()
+                .stopMusic();
+
+        for (Field field : fields) {
+            field.player.dispose();
+        }
     }
 
     /**
      * Confirms with the player, then returns to the menu.
      *
-     * <p>Pauses while the dialog is open and restores the previous state on
-     * Cancel, as Milestone 1 did. The music follows the same path, so it does not
-     * play on over a frozen game.</p>
+     * <p>Running fields are paused while the confirmation dialog is open.
+     * Cancelling restores only the fields that were running before the
+     * dialog appeared.</p>
      */
     public void onBackToMenu() {
-        GameStatus statusBeforeDialog = model.getStatus();
-        boolean wasRunning = statusBeforeDialog == GameStatus.RUNNING;
+        List<GameStatus> before =
+                new ArrayList<>();
 
-        if (wasRunning) {
-            model.togglePause();
-            AudioManager.getInstance().pauseMusic();
+        boolean musicWasRunning = false;
+
+        for (Field field : fields) {
+            GameStatus status =
+                    field.model.getStatus();
+
+            before.add(status);
+
+            if (status == GameStatus.RUNNING) {
+                field.model.togglePause();
+                musicWasRunning = true;
+            }
         }
 
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirm");
-        alert.setHeaderText("Return to Main Menu?");
-        alert.setContentText("Cancel to resume game");
-        alert.initOwner(navigator.getStage());
+        if (musicWasRunning) {
+            AudioManager.getInstance()
+                    .pauseMusic();
+        }
 
-        ButtonType yes = new ButtonType("Yes");
-        alert.getButtonTypes().setAll(yes, ButtonType.CANCEL);
+        Alert alert =
+                new Alert(
+                        Alert.AlertType.CONFIRMATION);
+
+        alert.setTitle("Confirm");
+        alert.setHeaderText(
+                "Return to Main Menu?");
+        alert.setContentText(
+                "Cancel to resume game");
+
+        alert.initOwner(
+                navigator.getStage());
+
+        ButtonType yes =
+                new ButtonType("Yes");
+
+        alert.getButtonTypes().setAll(
+                yes,
+                ButtonType.CANCEL);
 
         alert.showAndWait().ifPresent(response -> {
+
             if (response == yes) {
+
                 stop();
+
                 navigator.show(
                         new MainMenuScreen(
-                                new MainMenuController(navigator)));
-            } else if (wasRunning) {
-                // Cancel: put the game and the music back as they were.
-                model.togglePause();
-                AudioManager.getInstance().resumeMusic();
+                                new MainMenuController(
+                                        navigator)));
+
+            } else {
+
+                boolean resumeMusic = false;
+
+                for (int i = 0;
+                     i < fields.size();
+                     i++) {
+
+                    if (before.get(i)
+                            == GameStatus.RUNNING
+                            && fields.get(i).model
+                            .getStatus()
+                            == GameStatus.PAUSED) {
+
+                        fields.get(i).model.togglePause();
+                        resumeMusic = true;
+                    }
+                }
+
+                if (resumeMusic) {
+                    AudioManager.getInstance()
+                            .resumeMusic();
+                }
             }
         });
+    }
+
+    private static String fieldTitle(
+            int index,
+            PlayerType type) {
+
+        return "Player "
+                + (index + 1)
+                + " ("
+                + type.displayName()
+                + ")";
     }
 }

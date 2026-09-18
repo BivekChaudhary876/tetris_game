@@ -1,6 +1,7 @@
 package au.edu.Griffith.player;
 
 import au.edu.Griffith.model.PlayerType;
+import au.edu.Griffith.network.ExternalPlayerClient;
 
 /**
  * Builds the {@link Player} implementation matching a {@link PlayerType}.
@@ -21,7 +22,10 @@ public final class PlayerFactory {
      * @return a detached player, ready for {@link Player#attach}
      */
     public static Player create(PlayerType type) {
-        throw new UnsupportedOperationException(
-                "TODO: HUMAN -> HumanPlayer, AI -> AIPlayer, EXTERNAL -> ExternalPlayer with a new client");
+        return switch (type) {
+            case HUMAN -> new HumanPlayer();
+            case AI -> new AIPlayer();
+            case EXTERNAL -> new ExternalPlayer(new ExternalPlayerClient());
+        };
     }
 }
