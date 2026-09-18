@@ -117,6 +117,33 @@
     -fx-text-fill: -fx-text-primary;
 }
 
+.subheading {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+
+.player-panel {
+    -fx-min-width: 260;
+    -fx-pref-width: 280;
+}
+
+.player-type-radio {
+    -fx-text-fill: -fx-text-primary;
+    -fx-font-size: 16px;
+}
+
+.player-type-radio .radio {
+    -fx-background-color: #3a3a44;
+    -fx-border-color: -fx-panel-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.player-type-radio:selected .radio {
+    -fx-background-color: -fx-accent;
+}
+
 /* ----------------------------------------------------------------- screens */
 
 .splash-screen {

@@ -10,7 +10,9 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -52,6 +54,7 @@ public class ConfigurationScreen extends AbstractScreen {
     private static final int VOLUME_STEP = 10;
 
     private static final double SLIDER_WIDTH = 260;
+    private static final double PLAYER_PANEL_WIDTH = 280;
 
     private final ConfigurationController controller;
     private GridPane settings;
@@ -68,14 +71,39 @@ public class ConfigurationScreen extends AbstractScreen {
 
     @Override
     protected Parent buildLayout() {
+        GameConfig draft = controller.getDraft();
+
         Label heading = new Label("Configuration");
         heading.getStyleClass().add("heading");
 
+        VBox playerOne = buildPlayerPanel("Player 1", draft.getPlayerOneType(), draft::setPlayerOneType);
+        VBox playerTwo = buildPlayerPanel("Player 2", draft.getPlayerTwoType(), draft::setPlayerTwoType);
+        applyPlayerTwoEnabled(playerTwo, draft.isExtendMode());
+
+        HBox players = new HBox(24, playerOne, playerTwo);
+        players.setAlignment(Pos.CENTER);
+
+        VBox shared = buildSharedSettings(draft, playerTwo);
+
+        Button backButton = new Button("Back");
+        backButton.setPrefWidth(ScreenSizes.BUTTON_WIDTH);
+        backButton.setOnAction(event -> controller.onBack());
+
+        Label author = new Label("Author: Group 5");
+        author.getStyleClass().add("label-muted");
+
+        VBox layout = new VBox(18, heading, shared, players, backButton, author);
+        layout.setAlignment(Pos.CENTER);
+        return layout;
+    }
+
+    private VBox buildSharedSettings(GameConfig draft, VBox playerTwo) {
         settings = new GridPane();
+        nextRow = 0;
         settings.setAlignment(Pos.CENTER);
         settings.setHgap(40);
-        settings.setVgap(25);
-        settings.setPadding(new Insets(30));
+        settings.setVgap(12);
+        settings.setPadding(new Insets(20));
         settings.getStyleClass().add("panel-box");
 
         ColumnConstraints nameColumn = new ColumnConstraints(220);
@@ -113,12 +141,55 @@ public class ConfigurationScreen extends AbstractScreen {
         backButton.setPrefWidth(ScreenSizes.BUTTON_WIDTH);
         backButton.setOnAction(event -> controller.onBack());
 
-        Label author = new Label("Author: Group 5");
-        author.getStyleClass().add("label-muted");
+    private VBox buildPlayerPanel(String title, PlayerType selected, Consumer<PlayerType> onChange) {
+        Label heading = new Label(title);
+        heading.getStyleClass().add("subheading");
 
-        VBox layout = new VBox(25, heading, settings, backButton, author);
-        layout.setAlignment(Pos.CENTER);
-        return layout;
+        ToggleGroup group = new ToggleGroup();
+        VBox radios = new VBox(12);
+        for (PlayerType type : PlayerType.values()) {
+            RadioButton radio = new RadioButton(type.displayName());
+            radio.setToggleGroup(group);
+            radio.setSelected(type == selected);
+            radio.setUserData(type);
+            radio.getStyleClass().add("player-type-radio");
+            radios.getChildren().add(radio);
+        }
+        group.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                onChange.accept((PlayerType) newValue.getUserData());
+            }
+        });
+
+        VBox panel = new VBox(16, heading, radios);
+        panel.setAlignment(Pos.TOP_LEFT);
+        panel.setPadding(new Insets(20));
+        panel.setPrefWidth(PLAYER_PANEL_WIDTH);
+        panel.getStyleClass().addAll("panel-box", "player-panel");
+        return panel;
+    }
+
+    private static void applyPlayerTwoEnabled(VBox playerTwo, boolean extendMode) {
+        playerTwo.setDisable(!extendMode);
+        playerTwo.setOpacity(extendMode ? 1.0 : 0.45);
+    }
+
+    private HBox compactCheckBox(String text, boolean selected, Consumer<Boolean> onChange) {
+        CheckBox checkBox = new CheckBox();
+        checkBox.setSelected(selected);
+
+        Label name = new Label(text);
+        Label state = new Label(selected ? "On" : "Off");
+        state.getStyleClass().add("value-label");
+
+        checkBox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            state.setText(newValue ? "On" : "Off");
+            onChange.accept(newValue);
+        });
+
+        HBox row = new HBox(8, checkBox, name, state);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
     }
 
     /** Adds a slider whose scale shows every value, which suits the small ranges. */
@@ -182,12 +253,9 @@ public class ConfigurationScreen extends AbstractScreen {
         for (int i = min; i <= max; i += step) {
             Label tick = new Label(String.valueOf(i));
             tick.getStyleClass().add("tick-label");
-
-            // Equal share of the width each, so the numbers spread evenly.
             tick.setMaxWidth(Double.MAX_VALUE);
             tick.setAlignment(Pos.CENTER);
             HBox.setHgrow(tick, Priority.ALWAYS);
-
             scale.getChildren().add(tick);
         }
 
