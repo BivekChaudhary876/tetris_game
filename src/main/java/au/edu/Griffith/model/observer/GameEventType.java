@@ -25,5 +25,9 @@ public enum GameEventType {
     SCORE_CHANGED,
 
     /** The game moved between RUNNING / PAUSED / GAME_OVER. */
-    STATUS_CHANGED
+    STATUS_CHANGED,
+
+    /** The level rose after enough rows were cleared. */
+    LEVEL_CHANGED,
+
 }

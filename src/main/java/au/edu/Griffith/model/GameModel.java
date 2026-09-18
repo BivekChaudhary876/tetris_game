@@ -27,16 +27,23 @@ import java.util.List;
  *
  * <p>The gravity, collision, rotation and line-clear behaviour is ported from
  * Milestone 1 unchanged, including the fractional fall used for smooth
- * movement.</p>
+ * movement. Level-based speed is new: Milestone 1 fell at one fixed rate.</p>
  */
 public class GameModel extends Observable implements Movable {
 
     /**
-     * Tiles fallen per 16ms frame, from Milestone 1's {@code FALL_SPEED}.
+     * Tiles fallen per 16ms frame at level 1, from Milestone 1's {@code FALL_SPEED}.
      *
-     * <p>Constant for the whole game — Milestone 1 had no level-based speed.</p>
+     * <p>Milestone 1 had no level-based speed, so this was constant for the whole
+     * game. It is now the level-1 baseline that {@link #getFallSpeed()} scales.</p>
      */
-    public static final double FALL_SPEED = 0.02;
+    public static final double BASE_FALL_SPEED = 0.02;
+
+    /** Each level above the first falls this much faster. */
+    private static final double SPEED_PER_LEVEL = 0.15;
+
+    /** Lines that must clear before the level advances. */
+    private static final int LINES_PER_LEVEL = 10;
 
     /** Wall-kick offsets tried after a rotation is blocked, in Milestone 1's order. */
     private static final int[] KICK_OFFSETS = {1, -1};
@@ -44,6 +51,12 @@ public class GameModel extends Observable implements Movable {
     private final Board board;
     private final Score score = new Score();
     private final TetrominoGenerator generator;
+
+    /** Level the player chose in the configuration screen; the floor a restart returns to. */
+    private final int startingLevel;
+
+    private int level;
+    private int linesCleared;
 
     private AbstractTetromino activePiece;
     private GameState state = new RunningState();
@@ -57,9 +70,16 @@ public class GameModel extends Observable implements Movable {
      */
     private double fallProgress;
 
+    /** Starts at level 1. Kept so existing callers and tests need no change. */
     public GameModel(Board board, TetrominoGenerator generator) {
+        this(board, generator, 1);
+    }
+
+    public GameModel(Board board, TetrominoGenerator generator, int startingLevel) {
         this.board = board;
         this.generator = generator;
+        this.startingLevel = startingLevel;
+        this.level = startingLevel;
     }
 
     public Board getBoard() {
@@ -88,6 +108,21 @@ public class GameModel extends Observable implements Movable {
         return fallProgress;
     }
 
+    /** The level now in play, which rises as lines are cleared. */
+    public int getLevel() {
+        return level;
+    }
+
+    /** Total rows cleared this game, across all line clears. */
+    public int getLinesCleared() {
+        return linesCleared;
+    }
+
+    /** Tiles fallen per 16ms frame at the current level. */
+    public double getFallSpeed() {
+        return BASE_FALL_SPEED * (1 + (level - 1) * SPEED_PER_LEVEL);
+    }
+
     // ---------------------------------------------------------------- lifecycle
 
     /** Spawns the first piece and begins play. */
@@ -96,14 +131,17 @@ public class GameModel extends Observable implements Movable {
         spawnNextPiece();
     }
 
-    /** Clears the board and score and starts a fresh game. */
+    /** Clears the board, score and level progress, and starts a fresh game. */
     public void restart() {
         board.clear();
         score.reset();
         generator.reset();
         fallProgress = 0;
         activePiece = null;
+        level = startingLevel;
+        linesCleared = 0;
         notifyObservers(GameEvent.of(GameEventType.SCORE_CHANGED, this));
+        notifyObservers(GameEvent.of(GameEventType.LEVEL_CHANGED, this));
         start();
     }
 
@@ -136,14 +174,15 @@ public class GameModel extends Observable implements Movable {
      *
      * <p>Ported from Milestone 1's {@code update(deltaMs)}: accumulate fractional
      * progress, lock immediately if the piece is already resting, otherwise step
-     * down one row per whole tile accumulated.</p>
+     * down one row per whole tile accumulated. The rate now comes from
+     * {@link #getFallSpeed()} rather than a constant.</p>
      */
     public void applyGravity(double elapsedMs) {
         if (activePiece == null) {
             return;
         }
 
-        fallProgress += FALL_SPEED * (elapsedMs / 16.0);
+        fallProgress += getFallSpeed() * (elapsedMs / 16.0);
 
         if (!canFall()) {
             fallProgress = 0;
@@ -197,9 +236,26 @@ public class GameModel extends Observable implements Movable {
             score.addClearedLines(cleared);
             notifyObservers(new GameEvent(GameEventType.LINES_CLEARED, this, cleared));
             notifyObservers(GameEvent.of(GameEventType.SCORE_CHANGED, this));
+            advanceLevel(cleared);
         }
 
         spawnNextPiece();
+    }
+
+    /**
+     * Raises the level once enough rows have gone.
+     *
+     * <p>Computed from the running total rather than incremented, so a four-line
+     * clear that crosses two thresholds lands on the right level in one step.</p>
+     */
+    private void advanceLevel(int cleared) {
+        linesCleared += cleared;
+
+        int target = startingLevel + linesCleared / LINES_PER_LEVEL;
+        if (target > level) {
+            level = target;
+            notifyObservers(GameEvent.of(GameEventType.LEVEL_CHANGED, this));
+        }
     }
 
     private boolean canFall() {

@@ -8,10 +8,12 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
 /**
- * The panel beside the playfield: score, a Back button and the next-piece preview.
+ * The panel beside the playfield: score and level, a Back button and the
+ * next-piece preview.
  *
- * <p>Exactly the three boxes Milestone 1 showed. It reads from the model and
- * writes nothing back.</p>
+ * <p>The three boxes Milestone 1 showed, with the level added to the score box
+ * now that speed rises as rows are cleared. It reads from the model and writes
+ * nothing back.</p>
  */
 public class SidePanel {
 
@@ -24,6 +26,7 @@ public class SidePanel {
 
     private final VBox root = new VBox(ScreenSizes.MENU_SPACING);
     private final Label scoreLabel = new Label("Score: 0");
+    private final Label levelLabel = new Label("Level: 1");
     private final Canvas previewCanvas = new Canvas(PREVIEW_WIDTH, PREVIEW_HEIGHT);
     private final BoardRenderer previewRenderer = new BoardRenderer(previewCanvas);
 
@@ -43,8 +46,9 @@ public class SidePanel {
         root.getStyleClass().add("sidebar");
 
         scoreLabel.getStyleClass().add("score-label");
+        levelLabel.getStyleClass().add("score-label");
 
-        VBox scoreBox = new VBox(scoreLabel);
+        VBox scoreBox = new VBox(5, scoreLabel, levelLabel);
         scoreBox.setAlignment(Pos.CENTER);
         scoreBox.setPrefSize(BOX_SIZE, BOX_SIZE);
         scoreBox.getStyleClass().add("panel-box");
@@ -70,9 +74,10 @@ public class SidePanel {
         root.getChildren().addAll(scoreBox, buttonBox, nextBox);
     }
 
-    /** Re-reads the model and updates the score and preview. */
+    /** Re-reads the model and updates the score, level and preview. */
     public void refresh() {
         scoreLabel.setText("Score: " + model.getScore().getPoints());
+        levelLabel.setText("Level: " + model.getLevel());
         previewRenderer.renderPreview(model.getNextType());
     }
 }
