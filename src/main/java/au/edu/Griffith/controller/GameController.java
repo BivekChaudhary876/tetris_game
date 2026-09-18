@@ -263,6 +263,10 @@ public class GameController {
         };
     }
 
+    /**
+     * Game-over path: prompts on the next pulse of the FX thread, because this is
+     * called from inside the animation timer.
+     */
     private void offerHighScoreOnce(Field field) {
         if (field.highScorePrompted) {
             return;
@@ -274,6 +278,13 @@ public class GameController {
                 () -> promptForHighScore(field));
     }
 
+    /**
+     * Prompts for a name and saves the score if it makes the top ten.
+     *
+     * <p>{@link HighScoreService#record} writes {@code data/scores.json}
+     * immediately, so a score survives even if the app is closed straight
+     * after.</p>
+     */
     private void promptForHighScore(Field field) {
         int points =
                 field.model.getScore().getPoints();
@@ -332,6 +343,10 @@ public class GameController {
      * <p>Running fields are paused while the confirmation dialog is open.
      * Cancelling restores only the fields that were running before the
      * dialog appeared.</p>
+     *
+     * <p>On confirm, each field is offered the high-score prompt before we
+     * navigate away. Without this a player who quits part-way through loses a
+     * qualifying score, because the game-over prompt never fires.</p>
      */
     public void onBackToMenu() {
         List<GameStatus> before =
@@ -381,6 +396,15 @@ public class GameController {
             if (response == yes) {
 
                 stop();
+
+                // Save whatever was earned before leaving. Already on the FX
+                // thread and the clock is stopped, so these can run directly.
+                for (Field field : fields) {
+                    if (!field.highScorePrompted) {
+                        field.highScorePrompted = true;
+                        promptForHighScore(field);
+                    }
+                }
 
                 navigator.show(
                         new MainMenuScreen(
