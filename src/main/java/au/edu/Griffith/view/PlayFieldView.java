@@ -28,6 +28,16 @@ public class PlayFieldView implements GameObserver {
     private final Label pausedLabel = new Label("PAUSED");
     private final VBox gameOverBox = new VBox(20);
 
+    /**
+     * Shown for an external field while {@code TetrisServer.jar} is unreachable.
+     *
+     * <p>The spec asks for a warning and no control when the server is missing,
+     * with control resuming when it starts. The controller flips this every frame
+     * from the client's connection flag, so it clears by itself the moment the
+     * server appears — no restart needed.</p>
+     */
+    private final Label serverWarning = new Label("Waiting for TetrisServer…");
+
     public PlayFieldView(GameModel model, String title, Runnable onBack, Runnable onReplay) {
         this.model = model;
         this.onReplay = onReplay;
@@ -66,6 +76,11 @@ public class PlayFieldView implements GameObserver {
         renderer.render(model.getBoard(), model.getActivePiece(), model.getFallProgress());
     }
 
+    /** Shows or hides the "waiting for TetrisServer" banner over this field. */
+    public void setServerWarningVisible(boolean visible) {
+        serverWarning.setVisible(visible);
+    }
+
     @Override
     public void onGameEvent(GameEvent event) {
         switch (event.type()) {
@@ -81,6 +96,9 @@ public class PlayFieldView implements GameObserver {
         pausedLabel.getStyleClass().add("overlay-paused");
         pausedLabel.setVisible(false);
 
+        serverWarning.getStyleClass().add("overlay-paused");
+        serverWarning.setVisible(false);
+
         Label gameOverLabel = new Label("GAME OVER");
         gameOverLabel.getStyleClass().add("overlay-game-over");
 
@@ -93,7 +111,7 @@ public class PlayFieldView implements GameObserver {
         gameOverBox.setAlignment(Pos.CENTER);
         gameOverBox.setVisible(false);
 
-        StackPane field = new StackPane(boardCanvas, pausedLabel, gameOverBox);
+        StackPane field = new StackPane(boardCanvas, pausedLabel, serverWarning, gameOverBox);
         field.setAlignment(Pos.CENTER);
         field.getStyleClass().add("playfield");
 

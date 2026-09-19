@@ -113,4 +113,18 @@ public class GameScreen extends AbstractScreen {
         fields.forEach(
                 PlayFieldView::render);
     }
+
+    /**
+     * Shows or hides the "waiting for TetrisServer" banner over one field.
+     *
+     * <p>Indexed rather than exposing the views, so the controller can drive the
+     * banner without reaching into the layout. Out-of-range indexes are ignored,
+     * so a controller with fewer fields than it expects cannot crash the render
+     * loop.</p>
+     */
+    public void setServerWarningVisible(int fieldIndex, boolean visible) {
+        if (fieldIndex >= 0 && fieldIndex < fields.size()) {
+            fields.get(fieldIndex).setServerWarningVisible(visible);
+        }
+    }
 }
