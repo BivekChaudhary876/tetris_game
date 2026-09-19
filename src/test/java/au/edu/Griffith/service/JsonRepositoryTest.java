@@ -31,7 +31,7 @@ class JsonRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        file = tempDir.resolve("scores.json");
+        file = tempDir.resolve("corrupt-on-purpose.json");
         repository = new JsonRepository<>(file, new TypeReference<>() {
         });
     }

@@ -112,6 +112,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
+                <configuration>
+                    <!-- Byte Buddy 1.15 (via Mockito 5.14) predates Java 25 class files.
+                        @{argLine} keeps JaCoCo's agent, which sets that property. -->
+                    <argLine>@{argLine} -Dnet.bytebuddy.experimental=true</argLine>
+                </configuration>
             </plugin>
 
             <!-- Produces the coverage report the marking criteria asks for: target/site/jacoco/index.html -->
