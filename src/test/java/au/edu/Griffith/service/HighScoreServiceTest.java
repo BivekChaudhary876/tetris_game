@@ -1,6 +1,7 @@
 package au.edu.Griffith.service;
 
 import au.edu.Griffith.model.PlayerType;
+import au.edu.Griffith.model.ScoreConfig;
 import au.edu.Griffith.model.ScoreEntry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,7 @@ class HighScoreServiceTest {
     @Test
     void recordInsertsSortedAndSurvivesReload() {
         service.getTable();
-        service.record(new ScoreEntry("Tasman", 1500, PlayerType.HUMAN));
+        service.record(new ScoreEntry("Tasman", 1500, new ScoreConfig(10, 20, 1, PlayerType.HUMAN, false)));
 
         HighScoreService reloaded = newService();
         List<ScoreEntry> entries = reloaded.getTable().getEntries();

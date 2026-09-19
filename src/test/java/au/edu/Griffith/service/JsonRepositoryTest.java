@@ -1,6 +1,7 @@
 package au.edu.Griffith.service;
 
 import au.edu.Griffith.model.PlayerType;
+import au.edu.Griffith.model.ScoreConfig;
 import au.edu.Griffith.model.ScoreEntry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,8 +49,8 @@ class JsonRepositoryTest {
         });
 
         List<ScoreEntry> entries = List.of(
-                new ScoreEntry("Alex", 500, PlayerType.HUMAN),
-                new ScoreEntry("Bot", 200, PlayerType.AI));
+                new ScoreEntry("Alex", 500, new ScoreConfig(10, 20, 1, PlayerType.HUMAN, false)),
+                new ScoreEntry("Bot", 200, new ScoreConfig(10, 20, 1, PlayerType.AI, false)));
 
         nestedRepo.save(entries);
 
@@ -61,10 +62,10 @@ class JsonRepositoryTest {
 
     @Test
     void saveWritesPrettyPrintedJson() throws Exception {
-        repository.save(List.of(new ScoreEntry("Alex", 1200, PlayerType.HUMAN)));
+        repository.save(List.of(new ScoreEntry("Alex", 1200, new ScoreConfig(10, 20, 1, PlayerType.HUMAN, false))));
 
         String json = Files.readString(file);
-        assertTrue(json.contains("\"playerName\""));
+        assertTrue(json.contains("\"name\""));
         assertTrue(json.contains("Alex"));
         assertTrue(json.contains("1200"));
         assertTrue(json.contains("HUMAN"));
