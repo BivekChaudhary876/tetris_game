@@ -34,9 +34,9 @@ public class PlayFieldView implements GameObserver {
      * <p>The spec asks for a warning and no control when the server is missing,
      * with control resuming when it starts. The controller flips this every frame
      * from the client's connection flag, so it clears by itself the moment the
-     * server appears — no restart needed.</p>
+     * server appears â€” no restart needed.</p>
      */
-    private final Label serverWarning = new Label("Waiting for TetrisServer…");
+    private final Label serverWarning = new Label("Waiting for TetrisServer...");
 
     public PlayFieldView(GameModel model, String title, Runnable onBack, Runnable onReplay) {
         this.model = model;

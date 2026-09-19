@@ -91,9 +91,13 @@ public class MainMenuController {
         InputHandler keys = null;
 
         if (type == PlayerType.HUMAN) {
+            // A lone human field accepts both layouts. In Extend Mode they have
+            // to be split, or one key press would move both boards.
             keys = new InputHandler(
-                    playerOne
-                            ? InputHandler.DEFAULT_KEYS
+                    !config.isExtendMode()
+                            ? InputHandler.SINGLE_PLAYER_KEYS
+                            : playerOne
+                            ? InputHandler.PLAYER_ONE_KEYS
                             : InputHandler.PLAYER_TWO_KEYS);
         }
 

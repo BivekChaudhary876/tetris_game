@@ -6,8 +6,8 @@ import au.edu.Griffith.model.GameStatus;
 import au.edu.Griffith.model.PlayerType;
 import au.edu.Griffith.model.ScoreConfig;
 import au.edu.Griffith.model.ScoreEntry;
-import au.edu.Griffith.player.ExternalPlayer;
 import au.edu.Griffith.service.ConfigService;
+import au.edu.Griffith.player.ExternalPlayer;
 import au.edu.Griffith.player.HumanPlayer;
 import au.edu.Griffith.player.Player;
 import au.edu.Griffith.service.AudioManager;
@@ -202,6 +202,20 @@ public class GameController {
             AudioManager audio =
                     AudioManager.getInstance();
 
+            // Session-level keys, handled here rather than in InputHandler
+            // because they act on the whole game, not on one piece.
+            if (event.getCode() == KeyCode.S) {
+                audio.setEffectsOn(!audio.isEffectsOn());
+                screen.render();
+                return;
+            }
+
+            if (event.getCode() == KeyCode.M) {
+                audio.setMusicOn(!audio.isMusicOn());
+                screen.render();
+                return;
+            }
+
             if (event.getCode() == KeyCode.P) {
                 boolean shouldPause = false;
 
@@ -304,8 +318,7 @@ public class GameController {
 
         dialog.setTitle("High Score");
         dialog.setHeaderText(
-                "Score: " + points
-                        + " — you made the top 10!");
+                "Score: " + points + " - you made the top 10!");
         dialog.setContentText(
                 "Enter your name:");
 
@@ -323,35 +336,6 @@ public class GameController {
                                                 name,
                                                 points,
                                                 configOf(field))));
-    }
-
-    /**
-     * Keeps each external field's warning banner in step with its connection.
-     *
-     * <p>Driven from the clock rather than from an event, because the client
-     * connects and drops on its own background thread. Polling a volatile flag
-     * once a frame is what makes the banner clear by itself when the server is
-     * started mid-game.</p>
-     */
-    private void refreshServerWarnings() {
-        for (int i = 0; i < fields.size(); i++) {
-            if (fields.get(i).player instanceof ExternalPlayer external) {
-                screen.setServerWarningVisible(i, !external.isConnected());
-            }
-        }
-    }
-
-    /**
-     * The settings this field played under, saved beside its score so the
-     * high-score table can show them.
-     */
-    private ScoreConfig configOf(Field field) {
-        return new ScoreConfig(
-                field.model.getBoard().getWidth(),
-                field.model.getBoard().getHeight(),
-                ConfigService.getInstance().getConfig().getStartingLevel(),
-                field.player.getType(),
-                fields.size() > 1);
     }
 
     /**
@@ -480,5 +464,30 @@ public class GameController {
                 + " ("
                 + type.displayName()
                 + ")";
+    }
+
+    /** The settings this field played under, saved beside its score. */
+    private ScoreConfig configOf(Field field) {
+        return new ScoreConfig(
+                field.model.getBoard().getWidth(),
+                field.model.getBoard().getHeight(),
+                ConfigService.getInstance().getConfig().getStartingLevel(),
+                field.player.getType(),
+                fields.size() > 1);
+    }
+
+    /**
+     * Keeps each external field's warning banner in step with its connection.
+     *
+     * <p>Polled from the clock rather than driven by an event, because the client
+     * connects and drops on its own background thread. That is what makes the
+     * banner clear by itself when the server is started mid-game.</p>
+     */
+    private void refreshServerWarnings() {
+        for (int i = 0; i < fields.size(); i++) {
+            if (fields.get(i).player instanceof ExternalPlayer external) {
+                screen.setServerWarningVisible(i, !external.isConnected());
+            }
+        }
     }
 }

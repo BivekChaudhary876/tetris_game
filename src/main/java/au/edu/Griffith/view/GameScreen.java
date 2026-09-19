@@ -57,7 +57,7 @@ public class GameScreen extends AbstractScreen {
     @Override
     public String getTitle() {
         return fields.size() > 1
-                ? "Tetris — Extend Mode"
+                ? "Tetris - Extend Mode"
                 : "Tetris";
     }
 
