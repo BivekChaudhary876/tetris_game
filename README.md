@@ -256,11 +256,32 @@ target/
 *.iml
 *.class
 data/
+JavaTetrisScore.json
+TetrisServer.jar
+TetrisJava.jar
 ```
 
 These files are generated locally by IntelliJ IDEA or Maven and are not required to build the project from source. `data/` holds the `config.json` and `scores.json` written at runtime, so each machine keeps its own settings and scores.
 
 ---
+
+### Note for team members
+
+Because `JavaTetrisScore.json` is ignored, it will not arrive with a clone or pull.
+Create it yourself in the project root, beside `pom.xml`, and paste in:
+
+```json
+{
+  "scores" : [ ]
+}
+```
+
+The game also writes this file itself the first time a score is recorded, so an
+empty table is a valid starting state either way.
+
+`TetrisServer.jar` also has to be copied in manually — get it from the course site
+and place it in the project root. The external player needs it running on
+`localhost:3000`.
 
 ## 🔀 Git Workflow
 
