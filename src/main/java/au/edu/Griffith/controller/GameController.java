@@ -4,7 +4,9 @@ import au.edu.Griffith.controller.command.CommandFactory;
 import au.edu.Griffith.model.GameModel;
 import au.edu.Griffith.model.GameStatus;
 import au.edu.Griffith.model.PlayerType;
+import au.edu.Griffith.model.ScoreConfig;
 import au.edu.Griffith.model.ScoreEntry;
+import au.edu.Griffith.service.ConfigService;
 import au.edu.Griffith.player.HumanPlayer;
 import au.edu.Griffith.player.Player;
 import au.edu.Griffith.service.AudioManager;
@@ -318,7 +320,7 @@ public class GameController {
                                         new ScoreEntry(
                                                 name,
                                                 points,
-                                                field.player.getType())));
+                                                configOf(field))));
     }
 
     /**
@@ -447,5 +449,15 @@ public class GameController {
                 + " ("
                 + type.displayName()
                 + ")";
+    }
+
+    /** The settings this field played under, saved beside its score. */
+    private ScoreConfig configOf(Field field) {
+        return new ScoreConfig(
+                field.model.getBoard().getWidth(),
+                field.model.getBoard().getHeight(),
+                ConfigService.getInstance().getConfig().getStartingLevel(),
+                field.player.getType(),
+                fields.size() > 1);
     }
 }

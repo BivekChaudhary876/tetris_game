@@ -102,10 +102,10 @@ class HighScoreTableTest {
 
     @Test
     void entriesForFiltersByPlayerType() {
-        table.add(new ScoreEntry("Human", 300, PlayerType.HUMAN));
-        table.add(new ScoreEntry("Bot", 200, PlayerType.AI));
-        table.add(new ScoreEntry("Net", 100, PlayerType.EXTERNAL));
-        table.add(new ScoreEntry("Human2", 50, PlayerType.HUMAN));
+        table.add(new ScoreEntry("Human", 300, new ScoreConfig(10, 20, 1, PlayerType.HUMAN, false)));
+        table.add(new ScoreEntry("Bot", 200, new ScoreConfig(10, 20, 1, PlayerType.AI, false)));
+        table.add(new ScoreEntry("Net", 100, new ScoreConfig(10, 20, 1, PlayerType.EXTERNAL, false)));
+        table.add(new ScoreEntry("Human2", 50, new ScoreConfig(10, 20, 1, PlayerType.HUMAN, false)));
 
         List<ScoreEntry> humans = table.entriesFor(PlayerType.HUMAN);
         assertEquals(List.of("Human", "Human2"), names(humans));
@@ -129,7 +129,7 @@ class HighScoreTableTest {
     }
 
     private static ScoreEntry entry(String name, int score) {
-        return new ScoreEntry(name, score, PlayerType.HUMAN);
+        return new ScoreEntry(name, score, new ScoreConfig(10, 20, 1, PlayerType.HUMAN, false));
     }
 
     private static List<String> names(List<ScoreEntry> entries) {

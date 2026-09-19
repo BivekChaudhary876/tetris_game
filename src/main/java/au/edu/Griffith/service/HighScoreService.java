@@ -1,29 +1,32 @@
 package au.edu.Griffith.service;
 
 import au.edu.Griffith.model.HighScoreTable;
-import au.edu.Griffith.model.PlayerType;
+import au.edu.Griffith.model.ScoreBoard;
 import au.edu.Griffith.model.ScoreEntry;
 
 import java.nio.file.Path;
-import java.util.List;
 
 /**
- * Singleton owning the {@link HighScoreTable} and its {@code scores.json} file.
+ * Singleton owning the {@link HighScoreTable} and its score file.
  *
  * <p>Same holder idiom as {@link ConfigService}: lazy, and thread-safe through
  * class initialisation rather than locking. Single ownership matters here
- * because in two-player mode two games can finish at almost the same moment and
- * both want to record a score into the same table.</p>
+ * because in Extend Mode two games can finish at almost the same moment and both
+ * want to record into the same table.</p>
+ *
+ * <p>The file is {@code JavaTetrisScore.json} in the working directory, holding
+ * {@code {"scores":[...]}} — the same name and shape as the reference build, so
+ * a file from either is readable by the other.</p>
  */
 public final class HighScoreService {
 
-    private static final Path SCORES_FILE = Path.of("data", "scores.json");
+    private static final Path SCORES_FILE = Path.of("JavaTetrisScore.json");
 
     private static final class Holder {
         private static final HighScoreService INSTANCE = new HighScoreService();
     }
 
-    private final Repository<List<ScoreEntry>> repository;
+    private final Repository<ScoreBoard> repository;
     private final HighScoreTable table = new HighScoreTable();
     private boolean loaded;
 
@@ -32,8 +35,8 @@ public final class HighScoreService {
         }));
     }
 
-    /** Visible for tests so they can point at a temp file instead of {@code data/scores.json}. */
-    HighScoreService(Repository<List<ScoreEntry>> repository) {
+    /** Visible for tests so they can point at a temp file instead of the real one. */
+    HighScoreService(Repository<ScoreBoard> repository) {
         this.repository = repository;
     }
 
@@ -44,9 +47,9 @@ public final class HighScoreService {
     /** The table, loaded from disk on first access. */
     public HighScoreTable getTable() {
         if (!loaded) {
-            repository.load().ifPresentOrElse(
-                    table::replaceAll,
-                    this::seedDefaults);
+            // A missing file is a normal first run: start empty rather than
+            // inventing scores nobody played for.
+            repository.load().ifPresent(board -> table.replaceAll(board.scores()));
             loaded = true;
         }
         return table;
@@ -57,34 +60,19 @@ public final class HighScoreService {
         return getTable().qualifies(score);
     }
 
-    /** Records a finished game and writes the table straight back to disk. */
+    /** Records a finished game and writes the file straight away. */
     public void record(ScoreEntry entry) {
         getTable().add(entry);
-        repository.save(table.getEntries());
+        save();
     }
 
-    /** Empties the table and persists the empty result, behind the reset button. */
+    /** Empties the table and persists the empty result, behind the Clear button. */
     public void clearAll() {
         getTable().clear();
-        repository.save(List.of());
+        save();
     }
 
-    /**
-     * First run only: ten starter rows so the high-score screen is populated, then
-     * write {@code scores.json}. Modest scores so a short game can still qualify.
-     */
-    private void seedDefaults() {
-        table.replaceAll(List.of(
-                new ScoreEntry("Alex", 1000, PlayerType.HUMAN),
-                new ScoreEntry("Sam", 900, PlayerType.HUMAN),
-                new ScoreEntry("Jordan", 800, PlayerType.HUMAN),
-                new ScoreEntry("Riley", 700, PlayerType.HUMAN),
-                new ScoreEntry("Casey", 600, PlayerType.HUMAN),
-                new ScoreEntry("Morgan", 500, PlayerType.HUMAN),
-                new ScoreEntry("Taylor", 400, PlayerType.HUMAN),
-                new ScoreEntry("Quinn", 300, PlayerType.HUMAN),
-                new ScoreEntry("Avery", 200, PlayerType.HUMAN),
-                new ScoreEntry("Blake", 100, PlayerType.HUMAN)));
-        repository.save(table.getEntries());
+    private void save() {
+        repository.save(new ScoreBoard(table.getEntries()));
     }
 }
