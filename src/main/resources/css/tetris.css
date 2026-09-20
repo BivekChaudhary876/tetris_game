@@ -176,7 +176,7 @@
 }
 
 .connection-warning {
-    -fx-text-fill: -fx-danger;
-    -fx-font-size: 13px;
+    -fx-text-fill: -fx-text-primary;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
 }

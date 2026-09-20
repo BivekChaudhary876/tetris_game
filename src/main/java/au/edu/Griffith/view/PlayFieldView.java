@@ -29,12 +29,11 @@ public class PlayFieldView implements GameObserver {
     private final VBox gameOverBox = new VBox(20);
 
     /**
-     * Shown for an external field while {@code TetrisServer.jar} is unreachable.
+     * Shown for an external field while TetrisServer is unreachable.
      *
-     * <p>The spec asks for a warning and no control when the server is missing,
-     * with control resuming when it starts. The controller flips this every frame
-     * from the client's connection flag, so it clears by itself the moment the
-     * server appears â€” no restart needed.</p>
+     * <p>The controller flips this every frame from the client's connection
+     * flag, so it clears by itself the moment the server starts - no restart
+     * needed, which is what the spec asks for.</p>
      */
     private final Label serverWarning = new Label("Waiting for TetrisServer...");
 
@@ -96,7 +95,7 @@ public class PlayFieldView implements GameObserver {
         pausedLabel.getStyleClass().add("overlay-paused");
         pausedLabel.setVisible(false);
 
-        serverWarning.getStyleClass().add("overlay-paused");
+        serverWarning.getStyleClass().add("connection-warning");
         serverWarning.setVisible(false);
 
         Label gameOverLabel = new Label("GAME OVER");
@@ -114,6 +113,15 @@ public class PlayFieldView implements GameObserver {
         StackPane field = new StackPane(boardCanvas, pausedLabel, serverWarning, gameOverBox);
         field.setAlignment(Pos.CENTER);
         field.getStyleClass().add("playfield");
+
+        // A StackPane sizes itself to its widest child, and the GAME OVER
+        // overlay is wider than the board. Left alone it pads the canvas with a
+        // black margin either side, which reads as an empty column at each edge.
+        // Pinning the pane to the canvas keeps the board flush; the overlays are
+        // centred text and simply sit on top.
+        field.setMinSize(boardCanvas.getWidth(), boardCanvas.getHeight());
+        field.setPrefSize(boardCanvas.getWidth(), boardCanvas.getHeight());
+        field.setMaxSize(boardCanvas.getWidth(), boardCanvas.getHeight());
 
         HBox layout = new HBox(field, sidePanel.getRoot());
         layout.setAlignment(Pos.TOP_LEFT);
