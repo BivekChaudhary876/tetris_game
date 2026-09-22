@@ -30,9 +30,20 @@ public class BoardRenderer {
     private static final Color PREVIEW_FILL = Color.WHITE;
 
     private final Canvas canvas;
+    private final double tileSize;
 
     public BoardRenderer(Canvas canvas) {
+        this(canvas, ScreenSizes.TILE);
+    }
+
+    /**
+     * @param tileSize side of one board cell, in pixels - smaller than
+     *                 {@link ScreenSizes#TILE} on boards configured too large
+     *                 to fit the screen at full size
+     */
+    public BoardRenderer(Canvas canvas, double tileSize) {
         this.canvas = canvas;
+        this.tileSize = tileSize;
     }
 
     public Canvas getCanvas() {
@@ -57,8 +68,8 @@ public class BoardRenderer {
             for (int col = 0; col < board.getWidth(); col++) {
                 TetrominoType locked = board.cellAt(col, row);
                 if (locked != null) {
-                    drawCell(gc, col * ScreenSizes.TILE, row * ScreenSizes.TILE,
-                            ScreenSizes.TILE, toColor(locked));
+                    drawCell(gc, col * tileSize, row * tileSize,
+                            tileSize, toColor(locked));
                 }
             }
         }
@@ -67,9 +78,9 @@ public class BoardRenderer {
             Color colour = toColor(activePiece.getType());
             for (Position cell : activePiece.getCells()) {
                 drawCell(gc,
-                        cell.col() * ScreenSizes.TILE,
-                        (cell.row() + fallProgress) * ScreenSizes.TILE,
-                        ScreenSizes.TILE, colour);
+                        cell.col() * tileSize,
+                        (cell.row() + fallProgress) * tileSize,
+                        tileSize, colour);
             }
         }
     }

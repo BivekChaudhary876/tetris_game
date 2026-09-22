@@ -12,27 +12,41 @@ package au.edu.Griffith.model.tetromino;
  */
 public final class TetrominoFactory {
 
-    /**
-     * Column the O-piece spawns at in Milestone 1 — it is two cells wide and sits
-     * one column further right than the three-wide pieces.
-     */
-    private static final int SPAWN_COL_O = 4;
-
-    /** Column every other shape spawns at in Milestone 1. */
-    private static final int SPAWN_COL_DEFAULT = 3;
+    /** Board width Milestone 1's field was fixed at. */
+    private static final int MILESTONE_1_WIDTH = 10;
 
     private TetrominoFactory() {
         // Static factory only.
     }
 
     /**
-     * Creates a piece of the requested type at its Milestone 1 spawn position.
+     * Creates a piece of the requested type, centred on a Milestone 1-sized
+     * (10-column) board.
      *
      * @param type shape to create
      * @return a new piece, never {@code null}
      */
     public static AbstractTetromino create(TetrominoType type) {
-        int spawnCol = (type == TetrominoType.O) ? SPAWN_COL_O : SPAWN_COL_DEFAULT;
+        return create(type, MILESTONE_1_WIDTH);
+    }
+
+    /**
+     * Creates a piece of the requested type, horizontally centred on a board
+     * of the given width.
+     *
+     * <p>Milestone 1 spawned every piece at a fixed absolute column, which
+     * only worked because its board was always 10 wide. The field width is
+     * now configurable (5-15 columns), so the spawn column is derived from
+     * the piece's own width instead - this reproduces Milestone 1's spawn
+     * columns exactly on a 10-wide board and keeps every piece on-field on
+     * narrower or wider ones.</p>
+     *
+     * @param type       shape to create
+     * @param boardWidth width of the board the piece is spawning on
+     * @return a new piece, never {@code null}
+     */
+    public static AbstractTetromino create(TetrominoType type, int boardWidth) {
+        int spawnCol = Math.max(0, (boardWidth - type.width()) / 2);
 
         return switch (type) {
             case I -> new TetrominoI(spawnCol);

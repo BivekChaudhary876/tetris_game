@@ -103,23 +103,18 @@ public class GameController {
      */
     public void start() {
         List<GameModel> models = new ArrayList<>();
-        List<String> titles = new ArrayList<>();
+        List<PlayerType> playerTypes = new ArrayList<>();
         List<Runnable> replays = new ArrayList<>();
 
-        for (int i = 0; i < fields.size(); i++) {
-            Field field = fields.get(i);
-
+        for (Field field : fields) {
             models.add(field.model);
-            titles.add(
-                    fieldTitle(
-                            i,
-                            field.player.getType()));
+            playerTypes.add(field.player.getType());
             replays.add(fieldRestart(field));
         }
 
         screen = new GameScreen(
                 models,
-                titles,
+                playerTypes,
                 this::onBackToMenu,
                 replays);
 
@@ -453,17 +448,6 @@ public class GameController {
                 }
             }
         });
-    }
-
-    private static String fieldTitle(
-            int index,
-            PlayerType type) {
-
-        return "Player "
-                + (index + 1)
-                + " ("
-                + type.displayName()
-                + ")";
     }
 
     /** The settings this field played under, saved beside its score. */

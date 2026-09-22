@@ -81,7 +81,8 @@ public class MainMenuController {
                 new Board(
                         config.getFieldWidth(),
                         config.getFieldHeight()),
-                new SharedSequenceGenerator(seed));
+                new SharedSequenceGenerator(seed),
+                config.getStartingLevel());
 
         Player player =
                 PlayerFactory.create(type);

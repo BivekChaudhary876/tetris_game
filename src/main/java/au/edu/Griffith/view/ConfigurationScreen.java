@@ -6,6 +6,7 @@ import au.edu.Griffith.model.PlayerType;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -23,8 +24,9 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
- * updated and resolved conflicts
- * The settings screen, split into shared options plus Player 1 / Player 2.
+ * The settings screen: one column of labelled rows - sliders, on/off
+ * checkboxes and inline player-type radio groups - laid out the way the
+ * reference Configuration mockup does, with a full-width Back bar beneath.
  *
  * <p>Edits a draft {@link GameConfig}. Back asks the controller to persist it
  * to config.json. Player 2 is only enabled when extend mode is on.</p>
@@ -53,7 +55,7 @@ public class ConfigurationScreen extends AbstractScreen {
     private static final int VOLUME_STEP = 10;
 
     private static final double SLIDER_WIDTH = 260;
-    private static final double PLAYER_PANEL_WIDTH = 280;
+    private static final double PANEL_WIDTH = 620;
 
     private final ConfigurationController controller;
 
@@ -76,33 +78,10 @@ public class ConfigurationScreen extends AbstractScreen {
         Label heading = new Label("Configuration");
         heading.getStyleClass().add("heading");
 
-        VBox playerOne = buildPlayerPanel(
-                "Player 1",
-                draft.getPlayerOneType(),
-                draft::setPlayerOneType);
-
-        VBox playerTwo = buildPlayerPanel(
-                "Player 2",
-                draft.getPlayerTwoType(),
-                draft::setPlayerTwoType);
-
-        applyPlayerTwoEnabled(
-                playerTwo,
-                draft.isExtendMode());
-
-        HBox players = new HBox(
-                24,
-                playerOne,
-                playerTwo);
-
-        players.setAlignment(Pos.CENTER);
-
-        VBox shared = buildSharedSettings(
-                draft,
-                playerTwo);
+        VBox shared = buildSharedSettings(draft);
 
         Button backButton = new Button("Back");
-        backButton.setPrefWidth(ScreenSizes.BUTTON_WIDTH);
+        backButton.setPrefWidth(PANEL_WIDTH);
         backButton.setOnAction(event -> controller.onBack());
 
         Label author = new Label("Author: Group 5");
@@ -112,38 +91,37 @@ public class ConfigurationScreen extends AbstractScreen {
                 18,
                 heading,
                 shared,
-                players,
                 backButton,
                 author);
 
         layout.setAlignment(Pos.CENTER);
+        layout.setPadding(new Insets(20));
 
         return layout;
     }
 
-    private VBox buildSharedSettings(
-            GameConfig draft,
-            VBox playerTwo) {
-
+    /**
+     * Builds every setting as one row in a single grid: sliders, then the
+     * on/off checkboxes, then the two player-type rows - matching the
+     * reference mockup's single-column layout.
+     */
+    private VBox buildSharedSettings(GameConfig draft) {
         settings = new GridPane();
         nextRow = 0;
 
         settings.setAlignment(Pos.CENTER);
-        settings.setHgap(40);
-        settings.setVgap(12);
-        settings.setPadding(new Insets(20));
+        settings.setHgap(24);
+        settings.setVgap(14);
+        settings.setPadding(new Insets(24));
         settings.getStyleClass().add("panel-box");
 
-        ColumnConstraints nameColumn =
-                new ColumnConstraints(220);
+        ColumnConstraints nameColumn = new ColumnConstraints(220);
         nameColumn.setHalignment(HPos.LEFT);
 
-        ColumnConstraints controlColumn =
-                new ColumnConstraints(SLIDER_WIDTH);
+        ColumnConstraints controlColumn = new ColumnConstraints(SLIDER_WIDTH);
         controlColumn.setHalignment(HPos.LEFT);
 
-        ColumnConstraints valueColumn =
-                new ColumnConstraints(60);
+        ColumnConstraints valueColumn = new ColumnConstraints(60);
         valueColumn.setHalignment(HPos.RIGHT);
 
         settings.getColumnConstraints().addAll(
@@ -151,7 +129,6 @@ public class ConfigurationScreen extends AbstractScreen {
                 controlColumn,
                 valueColumn);
 
-        // Every control starts at the saved value.
         addSliderRow(
                 "Field Width (No of cells):",
                 WIDTH_MIN,
@@ -181,67 +158,68 @@ public class ConfigurationScreen extends AbstractScreen {
                 controller::setVolume,
                 VOLUME_STEP);
 
-        HBox toggles = new HBox(
-                28,
-                compactCheckBox(
-                        "Music",
-                        draft.isMusicOn(),
-                        controller::setMusic),
+        addCheckboxRow(
+                "Music (On|Off):",
+                draft.isMusicOn(),
+                controller::setMusic);
 
-                compactCheckBox(
-                        "Sound Effect",
-                        draft.isSoundEffectsOn(),
-                        controller::setSoundEffects),
+        addCheckboxRow(
+                "Sound Effect (On|Off):",
+                draft.isSoundEffectsOn(),
+                controller::setSoundEffects);
 
-                compactCheckBox(
-                        "Extend Mode",
-                        draft.isExtendMode(),
-                        enabled -> {
-                            controller.setExtendMode(enabled);
-                            applyPlayerTwoEnabled(
-                                    playerTwo,
-                                    enabled);
-                        }));
+        // Built ahead of the Extend Mode row so that row's checkbox can
+        // enable/disable it - Player Two's own row is added further below.
+        HBox playerTwoRadios = buildPlayerTypeRadios(
+                draft.getPlayerTwoType(),
+                draft::setPlayerTwoType);
 
-        toggles.setAlignment(Pos.CENTER);
-        toggles.setPadding(
-                new Insets(8, 0, 0, 0));
+        addCheckboxRow(
+                "Extend Mode (On|Off):",
+                draft.isExtendMode(),
+                enabled -> {
+                    controller.setExtendMode(enabled);
+                    applyPlayerTwoEnabled(playerTwoRadios, enabled);
+                });
 
-        VBox shared = new VBox(
-                10,
-                settings,
-                toggles);
+        HBox playerOneRadios = buildPlayerTypeRadios(
+                draft.getPlayerOneType(),
+                draft::setPlayerOneType);
 
+        addRow("Player One Type:", playerOneRadios);
+        addRow("Player Two Type:", playerTwoRadios);
+
+        applyPlayerTwoEnabled(playerTwoRadios, draft.isExtendMode());
+
+        VBox shared = new VBox(settings);
         shared.setAlignment(Pos.CENTER);
-        shared.setMaxWidth(620);
+        shared.setMaxWidth(PANEL_WIDTH);
 
         return shared;
     }
 
     /**
-     * Builds the Player 1 / Player 2 player-type selection panel.
+     * Builds an inline Human / AI / External radio group for one player.
+     *
+     * <p>Returned rather than placed directly, so the Extend Mode checkbox
+     * can capture Player Two's group before Player Two's row is added to
+     * the grid.</p>
      */
-    private VBox buildPlayerPanel(
-            String title,
+    private HBox buildPlayerTypeRadios(
             PlayerType selected,
             Consumer<PlayerType> onChange) {
 
-        Label heading = new Label(title);
-        heading.getStyleClass().add("subheading");
-
         ToggleGroup group = new ToggleGroup();
-
-        VBox radios = new VBox(12);
+        HBox radios = new HBox(20);
+        radios.setAlignment(Pos.CENTER_LEFT);
 
         for (PlayerType type : PlayerType.values()) {
-            RadioButton radio =
-                    new RadioButton(type.displayName());
+            RadioButton radio = new RadioButton(type.displayName());
 
             radio.setToggleGroup(group);
             radio.setSelected(type == selected);
             radio.setUserData(type);
-            radio.getStyleClass().add(
-                    "player-type-radio");
+            radio.getStyleClass().add("player-type-radio");
 
             radios.getChildren().add(radio);
         }
@@ -255,70 +233,62 @@ public class ConfigurationScreen extends AbstractScreen {
                     }
                 });
 
-        VBox panel = new VBox(
-                16,
-                heading,
-                radios);
-
-        panel.setAlignment(Pos.TOP_LEFT);
-        panel.setPadding(new Insets(20));
-        panel.setPrefWidth(PLAYER_PANEL_WIDTH);
-        panel.getStyleClass().addAll(
-                "panel-box",
-                "player-panel");
-
-        return panel;
+        return radios;
     }
 
     /**
-     * Enables Player 2 only when Extend Mode is active.
+     * Enables Player 2's row only when Extend Mode is active.
      */
     private static void applyPlayerTwoEnabled(
-            VBox playerTwo,
+            HBox playerTwoRadios,
             boolean extendMode) {
 
-        playerTwo.setDisable(!extendMode);
-        playerTwo.setOpacity(
-                extendMode ? 1.0 : 0.45);
+        playerTwoRadios.setDisable(!extendMode);
+        playerTwoRadios.setOpacity(extendMode ? 1.0 : 0.45);
     }
 
     /**
-     * Creates a compact on/off checkbox.
+     * Adds a name/control row with no value column, for the player-type
+     * radio groups.
      */
-    private HBox compactCheckBox(
+    private void addRow(String text, Node control) {
+        Label name = new Label(text);
+
+        settings.add(name, 0, nextRow);
+        settings.add(control, 1, nextRow);
+
+        nextRow++;
+    }
+
+    /**
+     * Adds an on/off checkbox row: name on the left, checkbox in the
+     * middle, and the live On/Off state on the right.
+     */
+    private void addCheckboxRow(
             String text,
             boolean selected,
             Consumer<Boolean> onChange) {
 
+        Label name = new Label(text);
+
         CheckBox checkBox = new CheckBox();
         checkBox.setSelected(selected);
 
-        Label name = new Label(text);
-
-        Label state = new Label(
-                selected ? "On" : "Off");
-
-        state.getStyleClass().add(
-                "value-label");
+        Label state = new Label(selected ? "On" : "Off");
+        state.getStyleClass().add("value-label");
 
         checkBox.selectedProperty().addListener(
                 (observable, oldValue, newValue) -> {
 
-                    state.setText(
-                            newValue ? "On" : "Off");
-
+                    state.setText(newValue ? "On" : "Off");
                     onChange.accept(newValue);
                 });
 
-        HBox row = new HBox(
-                8,
-                checkBox,
-                name,
-                state);
+        settings.add(name, 0, nextRow);
+        settings.add(checkBox, 1, nextRow);
+        settings.add(state, 2, nextRow);
 
-        row.setAlignment(Pos.CENTER_LEFT);
-
-        return row;
+        nextRow++;
     }
 
     /**

@@ -64,4 +64,18 @@ public enum TetrominoType {
         }
         return copy;
     }
+
+    /**
+     * How many columns wide this shape's bounding box is at spawn.
+     *
+     * <p>Used to centre the piece on boards narrower or wider than
+     * Milestone 1's fixed 10-column field.</p>
+     */
+    public int width() {
+        int maxCol = 0;
+        for (int[] offset : spawnOffsets) {
+            maxCol = Math.max(maxCol, offset[0]);
+        }
+        return maxCol + 1;
+    }
 }
