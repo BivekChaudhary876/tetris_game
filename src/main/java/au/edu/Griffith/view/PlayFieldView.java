@@ -2,6 +2,7 @@ package au.edu.Griffith.view;
 
 import au.edu.Griffith.model.GameModel;
 import au.edu.Griffith.model.GameStatus;
+import au.edu.Griffith.model.PlayerType;
 import au.edu.Griffith.model.observer.GameEvent;
 import au.edu.Griffith.model.observer.GameObserver;
 import javafx.geometry.Pos;
@@ -9,6 +10,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -37,14 +39,37 @@ public class PlayFieldView implements GameObserver {
      */
     private final Label serverWarning = new Label("Waiting for TetrisServer...");
 
-    public PlayFieldView(GameModel model, String title, Runnable onBack, Runnable onReplay) {
+    public PlayFieldView(
+            GameModel model,
+            String playerLabel,
+            PlayerType playerType,
+            Runnable onBack,
+            Runnable onReplay) {
+
+        this(model, playerLabel, playerType, onBack, onReplay, ScreenSizes.TILE);
+    }
+
+    /**
+     * @param tileSize side of one board cell, in pixels - shrunk below
+     *                 {@link ScreenSizes#TILE} by {@link GameScreen} when the
+     *                 configured board is too large to fit the screen at
+     *                 full size
+     */
+    public PlayFieldView(
+            GameModel model,
+            String playerLabel,
+            PlayerType playerType,
+            Runnable onBack,
+            Runnable onReplay,
+            double tileSize) {
+
         this.model = model;
         this.onReplay = onReplay;
         this.boardCanvas = new Canvas(
-                model.getBoard().getWidth() * ScreenSizes.TILE,
-                model.getBoard().getHeight() * ScreenSizes.TILE);
-        this.renderer = new BoardRenderer(boardCanvas);
-        this.sidePanel = new SidePanel(model, onBack, title);
+                model.getBoard().getWidth() * tileSize,
+                model.getBoard().getHeight() * tileSize);
+        this.renderer = new BoardRenderer(boardCanvas, tileSize);
+        this.sidePanel = new SidePanel(model, playerType, playerLabel, onBack);
         this.root = build();
     }
 
@@ -83,7 +108,7 @@ public class PlayFieldView implements GameObserver {
     @Override
     public void onGameEvent(GameEvent event) {
         switch (event.type()) {
-            case SCORE_CHANGED, PIECE_SPAWNED -> sidePanel.refresh();
+            case SCORE_CHANGED, PIECE_SPAWNED, LEVEL_CHANGED -> sidePanel.refresh();
             case STATUS_CHANGED -> updateOverlays();
             case PIECE_MOVED, PIECE_LOCKED, LINES_CLEARED -> {
                 // The per-frame render already covers these.
@@ -94,9 +119,15 @@ public class PlayFieldView implements GameObserver {
     private HBox build() {
         pausedLabel.getStyleClass().add("overlay-paused");
         pausedLabel.setVisible(false);
+        // On the narrowest board (5 cells = 150px) the playfield StackPane is
+        // pinned smaller than this text needs; without a min-width floor,
+        // StackPane shrinks the label to fit and its text ellipsizes to
+        // "PAUS...". Overflowing the board is preferable to that.
+        pausedLabel.setMinWidth(Region.USE_PREF_SIZE);
 
         serverWarning.getStyleClass().add("connection-warning");
         serverWarning.setVisible(false);
+        serverWarning.setMinWidth(Region.USE_PREF_SIZE);
 
         Label gameOverLabel = new Label("GAME OVER");
         gameOverLabel.getStyleClass().add("overlay-game-over");
@@ -109,6 +140,8 @@ public class PlayFieldView implements GameObserver {
         gameOverBox.getChildren().addAll(gameOverLabel, replayButton);
         gameOverBox.setAlignment(Pos.CENTER);
         gameOverBox.setVisible(false);
+        // Same fix as pausedLabel above, for the same reason.
+        gameOverBox.setMinWidth(Region.USE_PREF_SIZE);
 
         StackPane field = new StackPane(boardCanvas, pausedLabel, serverWarning, gameOverBox);
         field.setAlignment(Pos.CENTER);

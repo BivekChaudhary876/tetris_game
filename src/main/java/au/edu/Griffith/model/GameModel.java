@@ -113,6 +113,11 @@ public class GameModel extends Observable implements Movable {
         return fallProgress;
     }
 
+    /** The level chosen in configuration, before any lines were cleared. */
+    public int getStartingLevel() {
+        return startingLevel;
+    }
+
     /** The level now in play, which rises as lines are cleared. */
     public int getLevel() {
         return level;
@@ -217,7 +222,7 @@ public class GameModel extends Observable implements Movable {
      * @return {@code false} if there was no room, which means game over
      */
     public boolean spawnNextPiece() {
-        AbstractTetromino candidate = TetrominoFactory.create(generator.next());
+        AbstractTetromino candidate = TetrominoFactory.create(generator.next(), board.getWidth());
 
         if (!board.canPlace(candidate.getCells())) {
             activePiece = null;

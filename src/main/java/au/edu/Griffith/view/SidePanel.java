@@ -1,6 +1,7 @@
 package au.edu.Griffith.view;
 
 import au.edu.Griffith.model.GameModel;
+import au.edu.Griffith.model.PlayerType;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
@@ -8,37 +9,35 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
 /**
- * The panel beside the playfield: score and level, a Back button and the
+ * The panel beside the playfield: player info, a Back button and the
  * next-piece preview.
  *
- * <p>The three boxes Milestone 1 showed, with the level added to the score box
- * now that speed rises as rows are cleared. It reads from the model and writes
- * nothing back.</p>
+ * <p>Player info - type, initial level, current level and lines erased -
+ * plus the running score, laid out as the reference Game Info panel does.
+ * It reads from the model and writes nothing back.</p>
  */
 public class SidePanel {
 
-    private static final double BOX_SIZE = 150;
     private static final double PREVIEW_WIDTH = 150;
     private static final double PREVIEW_HEIGHT = 120;
 
     private final GameModel model;
+    private final PlayerType playerType;
+    private final String playerLabel;
     private final Runnable onBack;
-    private final String title;
 
     private final VBox root = new VBox(ScreenSizes.MENU_SPACING);
+    private final Label currentLevelLabel = new Label("Current Level: 1");
+    private final Label lineErasedLabel = new Label("Line Erased: 0");
     private final Label scoreLabel = new Label("Score: 0");
-    private final Label levelLabel = new Label("Level: 1");
     private final Canvas previewCanvas = new Canvas(PREVIEW_WIDTH, PREVIEW_HEIGHT);
     private final BoardRenderer previewRenderer = new BoardRenderer(previewCanvas);
 
-    public SidePanel(GameModel model, Runnable onBack) {
-        this(model, onBack, null);
-    }
-
-    public SidePanel(GameModel model, Runnable onBack, String title) {
+    public SidePanel(GameModel model, PlayerType playerType, String playerLabel, Runnable onBack) {
         this.model = model;
+        this.playerType = playerType;
+        this.playerLabel = playerLabel;
         this.onBack = onBack;
-        this.title = title;
         build();
     }
 
@@ -51,20 +50,28 @@ public class SidePanel {
         root.setAlignment(Pos.TOP_CENTER);
         root.getStyleClass().add("sidebar");
 
-        if (title != null && !title.isBlank()) {
-            Label titleLabel = new Label(title);
-            titleLabel.getStyleClass().add("next-label");
-            titleLabel.setWrapText(true);
-            root.getChildren().add(titleLabel);
-        }
+        Label heading = new Label("Game Info (" + playerLabel + ")");
+        heading.getStyleClass().add("next-label");
+        heading.setWrapText(true);
 
+        Label playerTypeLabel = new Label("Player Type: " + playerType.displayName());
+        Label initialLevelLabel = new Label("Initial Level: " + model.getStartingLevel());
+
+        currentLevelLabel.setText("Current Level: " + model.getLevel());
+        lineErasedLabel.setText("Line Erased: " + model.getLinesCleared());
+        scoreLabel.setText("Score: " + model.getScore().getPoints());
         scoreLabel.getStyleClass().add("score-label");
-        levelLabel.getStyleClass().add("score-label");
 
-        VBox scoreBox = new VBox(5, scoreLabel, levelLabel);
-        scoreBox.setAlignment(Pos.CENTER);
-        scoreBox.setPrefSize(BOX_SIZE, BOX_SIZE);
-        scoreBox.getStyleClass().add("panel-box");
+        VBox info = new VBox(
+                10,
+                heading,
+                playerTypeLabel,
+                initialLevelLabel,
+                currentLevelLabel,
+                lineErasedLabel,
+                scoreLabel);
+
+        info.setAlignment(Pos.TOP_LEFT);
 
         VBox buttonBox = new VBox(10);
         buttonBox.setAlignment(Pos.CENTER);
@@ -76,7 +83,7 @@ public class SidePanel {
             buttonBox.getChildren().add(backButton);
         }
 
-        Label nextLabel = new Label("Next Piece");
+        Label nextLabel = new Label("Next Tetromino:");
         nextLabel.getStyleClass().add("next-label");
 
         VBox previewBox = new VBox(previewCanvas);
@@ -86,17 +93,18 @@ public class SidePanel {
         VBox nextBox = new VBox(5, nextLabel, previewBox);
         nextBox.setAlignment(Pos.TOP_LEFT);
 
-        root.getChildren().add(scoreBox);
+        root.getChildren().add(info);
         if (!buttonBox.getChildren().isEmpty()) {
             root.getChildren().add(buttonBox);
         }
         root.getChildren().add(nextBox);
     }
 
-    /** Re-reads the model and updates the score, level and preview. */
+    /** Re-reads the model and updates the current level, lines erased, score and preview. */
     public void refresh() {
+        currentLevelLabel.setText("Current Level: " + model.getLevel());
+        lineErasedLabel.setText("Line Erased: " + model.getLinesCleared());
         scoreLabel.setText("Score: " + model.getScore().getPoints());
-        levelLabel.setText("Level: " + model.getLevel());
         previewRenderer.renderPreview(model.getNextType());
     }
 }

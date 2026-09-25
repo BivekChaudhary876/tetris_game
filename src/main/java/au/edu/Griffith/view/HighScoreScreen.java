@@ -1,6 +1,7 @@
 package au.edu.Griffith.view;
 
 import au.edu.Griffith.controller.HighScoreController;
+import au.edu.Griffith.model.HighScoreTable;
 import au.edu.Griffith.model.ScoreEntry;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -23,9 +24,13 @@ import java.util.List;
  */
 public class HighScoreScreen extends AbstractScreen {
 
+    private static final double RANK_COLUMN_WIDTH = 50;
     private static final double NAME_COLUMN_WIDTH = 180;
     private static final double SCORE_COLUMN_WIDTH = 120;
     private static final double TYPE_COLUMN_WIDTH = 120;
+
+    /** Shown in place of a name, score or type for a rank not yet earned. */
+    private static final String PLACEHOLDER = "----";
 
     private final HighScoreController controller;
 
@@ -50,30 +55,39 @@ public class HighScoreScreen extends AbstractScreen {
         table.setPadding(new Insets(20));
         table.getStyleClass().add("panel-box");
 
+        ColumnConstraints rankColumn = new ColumnConstraints(RANK_COLUMN_WIDTH);
+        rankColumn.setHalignment(HPos.LEFT);
         ColumnConstraints nameColumn = new ColumnConstraints(NAME_COLUMN_WIDTH);
         nameColumn.setHalignment(HPos.LEFT);
         ColumnConstraints scoreColumn = new ColumnConstraints(SCORE_COLUMN_WIDTH);
         scoreColumn.setHalignment(HPos.RIGHT);
         ColumnConstraints typeColumn = new ColumnConstraints(TYPE_COLUMN_WIDTH);
         typeColumn.setHalignment(HPos.LEFT);
-        table.getColumnConstraints().addAll(nameColumn, scoreColumn, typeColumn);
+        table.getColumnConstraints().addAll(rankColumn, nameColumn, scoreColumn, typeColumn);
 
-        table.add(headerLabel("Name"), 0, 0);
-        table.add(headerLabel("Score"), 1, 0);
-        table.add(headerLabel("Type"), 2, 0);
+        table.add(headerLabel("#"), 0, 0);
+        table.add(headerLabel("Name"), 1, 0);
+        table.add(headerLabel("Score"), 2, 0);
+        table.add(headerLabel("Type"), 3, 0);
 
+        // Always MAX_ENTRIES rows, even with no scores yet - real entries fill
+        // from the top, and every rank below them shows as a placeholder.
         List<ScoreEntry> entries = controller.getEntries();
-        if (entries.isEmpty()) {
-            Label empty = new Label("No scores yet");
-            empty.getStyleClass().add("label-muted");
-            table.add(empty, 0, 1, 3, 1);
-        } else {
-            for (int i = 0; i < entries.size(); i++) {
+        for (int i = 0; i < HighScoreTable.MAX_ENTRIES; i++) {
+            // Row 0 holds the column headings, so ranks start at row 1.
+            int row = i + 1;
+
+            table.add(rowLabel("(" + row + ")"), 0, row);
+
+            if (i < entries.size()) {
                 ScoreEntry entry = entries.get(i);
-                // Row 0 holds the column headings, so scores start at row 1.
-                table.add(rowLabel(entry.playerName()), 0, i + 1);
-                table.add(rowLabel(String.valueOf(entry.score())), 1, i + 1);
-                table.add(rowLabel(entry.playerType().displayName()), 2, i + 1);
+                table.add(rowLabel(entry.playerName()), 1, row);
+                table.add(rowLabel(String.valueOf(entry.score())), 2, row);
+                table.add(rowLabel(entry.playerType().displayName()), 3, row);
+            } else {
+                table.add(rowLabel(PLACEHOLDER), 1, row);
+                table.add(rowLabel("0"), 2, row);
+                table.add(rowLabel(PLACEHOLDER), 3, row);
             }
         }
 
