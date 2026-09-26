@@ -50,7 +50,7 @@
             <version>${javafx.version}</version>
         </dependency>
 
-        <!-- JSON persistence for config.json and scores.json (au.edu.Griffith.service). -->
+        <!-- JSON persistence for JavaTetrisConfig.json and JavaTetrisScore.json (au.edu.Griffith.service). -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

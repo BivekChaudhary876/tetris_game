@@ -30,23 +30,13 @@ public class PlayFieldView implements GameObserver {
     private final Label pausedLabel = new Label("PAUSED");
     private final VBox gameOverBox = new VBox(20);
 
-    /**
-     * Shown for an external field while TetrisServer is unreachable.
-     *
-     * <p>The controller flips this every frame from the client's connection
-     * flag, so it clears by itself the moment the server starts - no restart
-     * needed, which is what the spec asks for.</p>
-     */
-    private final Label serverWarning = new Label("Waiting for TetrisServer...");
-
     public PlayFieldView(
             GameModel model,
             String playerLabel,
             PlayerType playerType,
-            Runnable onBack,
             Runnable onReplay) {
 
-        this(model, playerLabel, playerType, onBack, onReplay, ScreenSizes.TILE);
+        this(model, playerLabel, playerType, onReplay, ScreenSizes.TILE);
     }
 
     /**
@@ -59,7 +49,6 @@ public class PlayFieldView implements GameObserver {
             GameModel model,
             String playerLabel,
             PlayerType playerType,
-            Runnable onBack,
             Runnable onReplay,
             double tileSize) {
 
@@ -69,7 +58,7 @@ public class PlayFieldView implements GameObserver {
                 model.getBoard().getWidth() * tileSize,
                 model.getBoard().getHeight() * tileSize);
         this.renderer = new BoardRenderer(boardCanvas, tileSize);
-        this.sidePanel = new SidePanel(model, playerType, playerLabel, onBack);
+        this.sidePanel = new SidePanel(model, playerType, playerLabel);
         this.root = build();
     }
 
@@ -100,11 +89,6 @@ public class PlayFieldView implements GameObserver {
         renderer.render(model.getBoard(), model.getActivePiece(), model.getFallProgress());
     }
 
-    /** Shows or hides the "waiting for TetrisServer" banner over this field. */
-    public void setServerWarningVisible(boolean visible) {
-        serverWarning.setVisible(visible);
-    }
-
     @Override
     public void onGameEvent(GameEvent event) {
         switch (event.type()) {
@@ -125,10 +109,6 @@ public class PlayFieldView implements GameObserver {
         // "PAUS...". Overflowing the board is preferable to that.
         pausedLabel.setMinWidth(Region.USE_PREF_SIZE);
 
-        serverWarning.getStyleClass().add("connection-warning");
-        serverWarning.setVisible(false);
-        serverWarning.setMinWidth(Region.USE_PREF_SIZE);
-
         Label gameOverLabel = new Label("GAME OVER");
         gameOverLabel.getStyleClass().add("overlay-game-over");
 
@@ -143,7 +123,7 @@ public class PlayFieldView implements GameObserver {
         // Same fix as pausedLabel above, for the same reason.
         gameOverBox.setMinWidth(Region.USE_PREF_SIZE);
 
-        StackPane field = new StackPane(boardCanvas, pausedLabel, serverWarning, gameOverBox);
+        StackPane field = new StackPane(boardCanvas, pausedLabel, gameOverBox);
         field.setAlignment(Pos.CENTER);
         field.getStyleClass().add("playfield");
 

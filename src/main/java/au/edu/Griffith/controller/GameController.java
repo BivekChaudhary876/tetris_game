@@ -37,6 +37,7 @@ public class GameController {
         private final Player player;
         private final InputHandler keys;
         private boolean highScorePrompted;
+        private boolean serverWarningShown;
 
         public Field(
                 GameModel model,
@@ -302,6 +303,10 @@ public class GameController {
         int points =
                 field.model.getScore().getPoints();
 
+        if (points <= 0) {
+            return;
+        }
+
         if (!HighScoreService.getInstance()
                 .qualifies(points)) {
 
@@ -313,7 +318,9 @@ public class GameController {
 
         dialog.setTitle("High Score");
         dialog.setHeaderText(
-                "Score: " + points + " - you made the top 10!");
+                HighScoreService.getInstance().isNewHighScore(points)
+                        ? "Score: " + points + " - new high score!"
+                        : "Score: " + points + " - you made the top 10!");
         dialog.setContentText(
                 "Enter your name:");
 
@@ -461,17 +468,43 @@ public class GameController {
     }
 
     /**
-     * Keeps each external field's warning banner in step with its connection.
+     * Warns about a disconnected external field with a dialog rather than an
+     * on-board banner, so legibility never depends on the configured field's
+     * width or height.
      *
      * <p>Polled from the clock rather than driven by an event, because the client
-     * connects and drops on its own background thread. That is what makes the
-     * banner clear by itself when the server is started mid-game.</p>
+     * connects and drops on its own background thread. Each field is only
+     * warned about once per disconnection - {@link Field#serverWarningShown}
+     * resets the moment it reconnects, so a later drop warns again.</p>
      */
     private void refreshServerWarnings() {
-        for (int i = 0; i < fields.size(); i++) {
-            if (fields.get(i).player instanceof ExternalPlayer external) {
-                screen.setServerWarningVisible(i, !external.isConnected());
+        for (Field field : fields) {
+            if (!(field.player instanceof ExternalPlayer external)) {
+                continue;
+            }
+
+            if (external.isConnected()) {
+                field.serverWarningShown = false;
+            } else if (!field.serverWarningShown) {
+                field.serverWarningShown = true;
+                Platform.runLater(this::showServerWarning);
             }
         }
+    }
+
+    private void showServerWarning() {
+        Alert alert =
+                new Alert(
+                        Alert.AlertType.ERROR);
+
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(
+                "You need to start TetrisServer to use external player mode.");
+
+        alert.initOwner(
+                navigator.getStage());
+
+        alert.showAndWait();
     }
 }

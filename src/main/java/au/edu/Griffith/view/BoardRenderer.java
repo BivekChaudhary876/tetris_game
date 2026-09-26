@@ -26,9 +26,6 @@ public class BoardRenderer {
     private static final Color BACKGROUND = Color.BLACK;
     private static final Color CELL_BORDER = Color.GRAY;
 
-    /** Preview blocks are drawn white in Milestone 1, not in the piece's own colour. */
-    private static final Color PREVIEW_FILL = Color.WHITE;
-
     private final Canvas canvas;
     private final double tileSize;
 
@@ -86,9 +83,8 @@ public class BoardRenderer {
     }
 
     /**
-     * Draws the next-piece thumbnail.
-     *
-     * <p>Matches Milestone 1: white blocks, inset from the top-left of the panel.</p>
+     * Draws the next-piece thumbnail, in the piece's own colour, inset from the
+     * top-left of the panel.
      */
     public void renderPreview(TetrominoType type) {
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -100,11 +96,12 @@ public class BoardRenderer {
         }
 
         double inset = ScreenSizes.PREVIEW_BLOCK / 2;
+        Color colour = toColor(type);
         for (int[] offset : type.spawnOffsets()) {
             drawCell(gc,
                     offset[0] * ScreenSizes.PREVIEW_BLOCK + inset,
                     offset[1] * ScreenSizes.PREVIEW_BLOCK + inset,
-                    ScreenSizes.PREVIEW_BLOCK, PREVIEW_FILL);
+                    ScreenSizes.PREVIEW_BLOCK, colour);
         }
     }
 
