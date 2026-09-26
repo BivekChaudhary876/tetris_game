@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Singleton owning the one live {@link GameConfig} and its {@code config.json} file.
+ * Singleton owning the one live {@link GameConfig} and its {@code JavaTetrisConfig.json} file.
  *
  * <p>A Singleton is the right call here because the settings are genuinely a
  * single shared resource: the configuration screen, both game fields, the audio
@@ -31,7 +31,7 @@ import java.util.Optional;
 public final class ConfigService {
 
     private static final Path CONFIG_FILE =
-            Path.of("data", "config.json");
+            Path.of("JavaTetrisConfig.json");
 
     /** Not loaded until getInstance() is first called — this is what makes it lazy. */
     private static final class Holder {
@@ -53,7 +53,7 @@ public final class ConfigService {
 
     /**
      * Visible for tests so they can point at a temp file instead of
-     * {@code data/config.json}.
+     * {@code JavaTetrisConfig.json}.
      */
     ConfigService(Repository<GameConfig> repository) {
         this.repository = repository;

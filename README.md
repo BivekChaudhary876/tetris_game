@@ -196,7 +196,7 @@ tetris_game/
 │   │   │   │   ├── Board.java              📐 Grid, collision checks, line clearing
 │   │   │   │   ├── Score.java              🎯 Points, level and lines-erased rules
 │   │   │   │   ├── HighScoreTable.java     🏆 Top-ten ranking rules
-│   │   │   │   ├── GameConfig.java         ⚙️ Settings, as persisted to config.json
+│   │   │   │   ├── GameConfig.java         ⚙️ Settings, as persisted to JavaTetrisConfig.json
 │   │   │   │   ├── Movable.java            🔌 Movement contract implemented by GameModel
 │   │   │   │   ├── GameStatus.java         🏷️ enum READY / RUNNING / PAUSED / GAME_OVER
 │   │   │   │   ├── PlayerType.java         🏷️ enum HUMAN / AI / EXTERNAL
@@ -238,7 +238,8 @@ tetris_game/
 │   │
 │   └── test/java/au/edu/Griffith/          🧪 JUnit 5, parameterized tests, stubs and Mockito mocks
 │
-├── data/                                   💾 config.json and scores.json (generated, git-ignored)
+├── JavaTetrisConfig.json                   💾 Settings (generated, git-ignored)
+├── JavaTetrisScore.json                    💾 High scores (generated, git-ignored)
 ├── .gitignore                              🚫 Ignored IDE, build and runtime files
 ├── pom.xml                                 📦 Maven: JavaFX, Jackson, JUnit, Mockito, JaCoCo
 └── README.md                               📖 Project documentation
@@ -255,13 +256,13 @@ The following generated or IDE-specific files are intentionally excluded from th
 target/
 *.iml
 *.class
-data/
+JavaTetrisConfig.json
 JavaTetrisScore.json
 TetrisServer.jar
 TetrisJava.jar
 ```
 
-These files are generated locally by IntelliJ IDEA or Maven and are not required to build the project from source. `data/` holds the `config.json` and `scores.json` written at runtime, so each machine keeps its own settings and scores.
+These files are generated locally by IntelliJ IDEA or Maven and are not required to build the project from source. `JavaTetrisConfig.json` and `JavaTetrisScore.json` are written at runtime in the project root, beside `pom.xml`, so each machine keeps its own settings and scores.
 
 ---
 

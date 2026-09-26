@@ -1,7 +1,7 @@
 package au.edu.Griffith.model;
 
 /**
- * User-editable game settings, exactly as they are persisted to {@code config.json}.
+ * User-editable game settings, exactly as they are persisted to {@code JavaTetrisConfig.json}.
  *
  * <p>A plain mutable bean rather than a record because the JSON layer and the
  * configuration screen both need to read and write individual fields, and
@@ -35,7 +35,7 @@ public class GameConfig {
      * Playback level for music and effects, as a percentage.
      *
      * <p>Stored whole rather than as a 0.0–1.0 fraction because the slider works
-     * in whole numbers and a percentage reads clearly in {@code config.json};
+     * in whole numbers and a percentage reads clearly in {@code JavaTetrisConfig.json};
      * {@link au.edu.Griffith.service.AudioManager} converts it for JavaFX.</p>
      */
     private int volume = 50;

@@ -29,7 +29,7 @@ import java.util.function.IntConsumer;
  * reference Configuration mockup does, with a full-width Back bar beneath.
  *
  * <p>Edits a draft {@link GameConfig}. Back asks the controller to persist it
- * to config.json. Player 2 is only enabled when extend mode is on.</p>
+ * to JavaTetrisConfig.json. Player 2 is only enabled when extend mode is on.</p>
  *
  * <p>The screen reports changes to {@link ConfigurationController}, which
  * applies audio settings immediately and persists the configuration when
