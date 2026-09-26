@@ -21,6 +21,9 @@
                 mvn javafx:run -Plegacy   -> au.edu.Griffith.legacy.Main
         -->
         <app.mainClass>au.edu.Griffith.TetrisApp</app.mainClass>
+        <!-- Main-Class of the runnable jar. Must not extend javafx.application.Application,
+             otherwise `java -jar` refuses to start with JavaFX on the classpath. -->
+        <app.launcherClass>au.edu.Griffith.Launcher</app.launcherClass>
         <jackson.version>2.18.2</jackson.version>
         <junit.version>5.11.4</junit.version>
         <mockito.version>5.14.2</mockito.version>
@@ -48,6 +51,45 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-media</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+        <!-- Native libraries for every target OS, so one TetrisJava.jar runs on Windows,
+             Linux and macOS. Only graphics and media contain native code.
+             Intel Macs ('mac') can't be added too: their files clash with mac-aarch64. -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>win</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>win</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>linux</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>linux</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>mac-aarch64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>mac-aarch64</classifier>
         </dependency>
 
         <!-- JSON persistence for JavaTetrisConfig.json and JavaTetrisScore.json (au.edu.Griffith.service). -->
@@ -85,6 +127,7 @@
     </dependencies>
 
     <build>
+        <finalName>TetrisJava</finalName>
         <plugins>
             <plugin>
                 <groupId>org.openjfx</groupId>
@@ -102,10 +145,52 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>${app.mainClass}</mainClass>
+                            <mainClass>${app.launcherClass}</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
+            </plugin>
+
+            <!-- Bundles our classes, resources, Jackson and JavaFX (incl. native libraries
+                 for Windows, Linux and macOS) into one self-contained executable jar. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/*/module-info.class</exclude>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${app.launcherClass}</mainClass>
+                                    <manifestEntries>
+                                        <!-- Silences JDK 24+ "restricted method" warnings from JavaFX natives. -->
+                                        <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
+                                    </manifestEntries>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
