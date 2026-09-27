@@ -195,11 +195,17 @@ extends `javafx.application.Application` when JavaFX is on the classpath.
 **Build** (from the project root):
 
 ```bash
-mvn clean package
+mvn clean package -Pcross-platform
 ```
 
-Or, in IntelliJ: Maven tool window → **Lifecycle** → run `clean`, then `package`.
+Or, in IntelliJ: Maven tool window → **Profiles** → tick `cross-platform`, then
+**Lifecycle** → run `clean`, then `package`. **Untick the profile afterwards** —
+while it is active, `javafx:run` can load another OS's JavaFX natives and fail with
+*"no suitable pipeline found"*.
 Add `-DskipTests` to the command to skip the test suite.
+
+Without `-Pcross-platform`, `mvn clean package` still produces `TetrisJava.jar`, but it
+only contains the natives for your own OS, so it runs on that OS only.
 
 **Run:**
 
