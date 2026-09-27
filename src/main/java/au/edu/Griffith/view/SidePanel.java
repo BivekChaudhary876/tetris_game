@@ -4,13 +4,11 @@ import au.edu.Griffith.model.GameModel;
 import au.edu.Griffith.model.PlayerType;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
 /**
- * The panel beside the playfield: player info, a Back button and the
- * next-piece preview.
+ * The panel beside the playfield: player info and the next-piece preview.
  *
  * <p>Player info - type, initial level, current level and lines erased -
  * plus the running score, laid out as the reference Game Info panel does.
@@ -24,7 +22,6 @@ public class SidePanel {
     private final GameModel model;
     private final PlayerType playerType;
     private final String playerLabel;
-    private final Runnable onBack;
 
     private final VBox root = new VBox(ScreenSizes.MENU_SPACING);
     private final Label currentLevelLabel = new Label("Current Level: 1");
@@ -33,11 +30,10 @@ public class SidePanel {
     private final Canvas previewCanvas = new Canvas(PREVIEW_WIDTH, PREVIEW_HEIGHT);
     private final BoardRenderer previewRenderer = new BoardRenderer(previewCanvas);
 
-    public SidePanel(GameModel model, PlayerType playerType, String playerLabel, Runnable onBack) {
+    public SidePanel(GameModel model, PlayerType playerType, String playerLabel) {
         this.model = model;
         this.playerType = playerType;
         this.playerLabel = playerLabel;
-        this.onBack = onBack;
         build();
     }
 
@@ -73,16 +69,6 @@ public class SidePanel {
 
         info.setAlignment(Pos.TOP_LEFT);
 
-        VBox buttonBox = new VBox(10);
-        buttonBox.setAlignment(Pos.CENTER);
-        if (onBack != null) {
-            Button backButton = new Button("Back");
-            backButton.setPrefWidth(ScreenSizes.BUTTON_WIDTH);
-            backButton.setFocusTraversable(false);
-            backButton.setOnAction(event -> onBack.run());
-            buttonBox.getChildren().add(backButton);
-        }
-
         Label nextLabel = new Label("Next Tetromino:");
         nextLabel.getStyleClass().add("next-label");
 
@@ -94,9 +80,6 @@ public class SidePanel {
         nextBox.setAlignment(Pos.TOP_LEFT);
 
         root.getChildren().add(info);
-        if (!buttonBox.getChildren().isEmpty()) {
-            root.getChildren().add(buttonBox);
-        }
         root.getChildren().add(nextBox);
     }
 

@@ -60,6 +60,11 @@ public final class HighScoreService {
         return getTable().qualifies(score);
     }
 
+    /** True if this score would take first place on the table. */
+    public boolean isNewHighScore(int score) {
+        return getTable().isNewHighScore(score);
+    }
+
     /** Records a finished game and writes the file straight away. */
     public void record(ScoreEntry entry) {
         getTable().add(entry);

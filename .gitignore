@@ -14,10 +14,7 @@ Thumbs.db
 
 # Runtime persistence written by ConfigService / HighScoreService.
 # Generated on first run - each machine keeps its own settings and scores.
-data/
-
-
-# Runtime persistence, generated on first run.
+JavaTetrisConfig.json
 JavaTetrisScore.json
 
 # Lecturer-supplied binaries, not our source.

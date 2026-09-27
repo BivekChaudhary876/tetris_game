@@ -34,6 +34,11 @@ public class HighScoreTable {
         return score > entries.getLast().score();
     }
 
+    /** True if {@code score} would take first place, ahead of every entry currently listed. */
+    public boolean isNewHighScore(int score) {
+        return entries.isEmpty() || score > entries.getFirst().score();
+    }
+
     /**
      * Inserts an entry, re-sorts on {@link ScoreEntry}'s natural order and drops
      * anything past {@link #MAX_ENTRIES}.

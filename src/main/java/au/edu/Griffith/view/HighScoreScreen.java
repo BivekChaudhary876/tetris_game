@@ -27,7 +27,7 @@ public class HighScoreScreen extends AbstractScreen {
     private static final double RANK_COLUMN_WIDTH = 50;
     private static final double NAME_COLUMN_WIDTH = 180;
     private static final double SCORE_COLUMN_WIDTH = 120;
-    private static final double TYPE_COLUMN_WIDTH = 120;
+    private static final double CONFIG_COLUMN_WIDTH = 190;
 
     /** Shown in place of a name, score or type for a rank not yet earned. */
     private static final String PLACEHOLDER = "----";
@@ -61,14 +61,14 @@ public class HighScoreScreen extends AbstractScreen {
         nameColumn.setHalignment(HPos.LEFT);
         ColumnConstraints scoreColumn = new ColumnConstraints(SCORE_COLUMN_WIDTH);
         scoreColumn.setHalignment(HPos.RIGHT);
-        ColumnConstraints typeColumn = new ColumnConstraints(TYPE_COLUMN_WIDTH);
-        typeColumn.setHalignment(HPos.LEFT);
-        table.getColumnConstraints().addAll(rankColumn, nameColumn, scoreColumn, typeColumn);
+        ColumnConstraints configColumn = new ColumnConstraints(CONFIG_COLUMN_WIDTH);
+        configColumn.setHalignment(HPos.LEFT);
+        table.getColumnConstraints().addAll(rankColumn, nameColumn, scoreColumn, configColumn);
 
         table.add(headerLabel("#"), 0, 0);
         table.add(headerLabel("Name"), 1, 0);
         table.add(headerLabel("Score"), 2, 0);
-        table.add(headerLabel("Type"), 3, 0);
+        table.add(headerLabel("Config"), 3, 0);
 
         // Always MAX_ENTRIES rows, even with no scores yet - real entries fill
         // from the top, and every rank below them shows as a placeholder.
@@ -83,7 +83,7 @@ public class HighScoreScreen extends AbstractScreen {
                 ScoreEntry entry = entries.get(i);
                 table.add(rowLabel(entry.playerName()), 1, row);
                 table.add(rowLabel(String.valueOf(entry.score())), 2, row);
-                table.add(rowLabel(entry.playerType().displayName()), 3, row);
+                table.add(rowLabel(entry.config().summary()), 3, row);
             } else {
                 table.add(rowLabel(PLACEHOLDER), 1, row);
                 table.add(rowLabel("0"), 2, row);
