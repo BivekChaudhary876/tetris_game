@@ -127,7 +127,7 @@ and `network/` (the `TetrisServer.jar` client).
 
 Make sure the following are installed:
 
-* ☕ JDK 25 or later
+* ☕ JDK 25 or later (any distribution — also all that's needed to run the packaged jar)
 * 📦 Maven 3.8 or later
 * 💻 IntelliJ IDEA or another Java IDE
 * 🐙 Git
@@ -174,6 +174,46 @@ property. Both the profile and the `legacy` package are removed once migration i
 3. Allow Maven dependencies to finish downloading.
 4. Locate `Main.java`.
 5. Run the application using the IntelliJ Run configuration.
+
+### Build the Runnable Jar
+
+The game is packaged as a single `TetrisJava.jar`, run with `java -jar`.
+
+It is a **self-contained (fat) jar**: it contains our classes, resources (audio, CSS,
+images), Jackson and JavaFX, including JavaFX's native libraries for Windows, Linux and
+macOS. The same file therefore runs on all three.
+
+**Requirement to run it:** any JDK 25 or later (Oracle, Temurin, …). No JavaFX
+installation is needed. The console shows a harmless
+*"Unsupported JavaFX configuration: classes were loaded from 'unnamed module'"* warning,
+because JavaFX is loaded from the jar rather than as modules.
+
+The jar's entry point is `au.edu.Griffith.Launcher`, a plain class that calls
+`TetrisApp.main`. It exists because `java -jar` refuses to start a main class that
+extends `javafx.application.Application` when JavaFX is on the classpath.
+
+**Build** (from the project root):
+
+```bash
+mvn clean package
+```
+
+Or, in IntelliJ: Maven tool window → **Lifecycle** → run `clean`, then `package`.
+Add `-DskipTests` to the command to skip the test suite.
+
+**Run:**
+
+```bash
+java -jar target/TetrisJava.jar
+```
+
+Run it from the folder that should hold the game's data: `data/config.json` and
+`JavaTetrisScore.json` are read and written relative to the current directory, so
+running from the project root reuses your existing settings and scores.
+
+For a submission, build from an up-to-date `main` and copy `TetrisJava.jar` out of
+`target/` — it is deleted on every `clean`. The jar is a build output and is
+intentionally not committed (see [Ignored Files](#ignored-files)).
 
 ---
 
