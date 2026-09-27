@@ -48,11 +48,32 @@ A JavaFX implementation of the classic Tetris game, developed using object-orien
 * 🎮 Game-over handling
 * 🔁 Replay functionality
 
+### Player types and modes
+
+* 🤖 **AI Player** — heuristic search over aggregate height, holes, bumpiness and
+  lines cleared, with a two-piece lookahead (`au.edu.Griffith.ai`)
+* 🌐 **External Player** — takes its moves from `TetrisServer.jar` on
+  `localhost:3000`; shows a warning and leaves that field uncontrolled while the
+  server is unreachable, and resumes on its own when the server comes back
+* 👥 **Extend Mode** — two fields side by side, sharing one tetromino sequence, each
+  with its own player type
+
+### Controls
+
+| Action       | Single player  | Extend Mode P1 | Extend Mode P2 |
+| ------------ | -------------- | -------------- | -------------- |
+| Left / Right | ← → or `,` `.` | `,` `.`        | ← →            |
+| Rotate       | ↑ or `L`       | `L`            | ↑              |
+| Soft drop    | ↓ or `Space`   | `Space`        | ↓              |
+
+`P` pause · `S` sound effects · `M` music
+
 ### Object-Oriented Design
 
 * 🧩 `AbstractTetromino` provides a common abstraction for Tetromino pieces
 * 🔌 `Movable` defines movement behaviour
-* 📦 Java `record` types are used for value data (`Position`, `Block`, `ScoreEntry`, `OpMove`)
+* 📦 Java `record` types are used for value data (`Position`, `Block`, `ScoreEntry`,
+  `ScoreConfig`, `Move`, `OpMove`)
 * 🔒 Encapsulation is used to protect game state
 * 🏛️ Inheritance is used for the different Tetromino implementations
 
@@ -85,6 +106,7 @@ its own package and depends only on the layer below it.
 ```
 
 Supporting packages: `player/` (Human / AI / External strategies),
+`ai/` (board evaluation and move search, used by `AIPlayer`),
 `service/` (singletons for config, scores and audio, over a generic JSON repository)
 and `network/` (the `TetrisServer.jar` client).
 
@@ -172,7 +194,7 @@ property. Both the profile and the `legacy` package are removed once migration i
 1. Open the `tetris_game` folder in IntelliJ IDEA.
 2. Allow IntelliJ to import the Maven project.
 3. Allow Maven dependencies to finish downloading.
-4. Locate `Main.java`.
+4. Locate `TetrisApp.java`.
 5. Run the application using the IntelliJ Run configuration.
 
 ### Build the Runnable Jar
@@ -182,6 +204,10 @@ The game is packaged as a single `TetrisJava.jar`, run with `java -jar`.
 It is a **self-contained (fat) jar**: it contains our classes, resources (audio, CSS,
 images), Jackson and JavaFX, including JavaFX's native libraries for Windows, Linux and
 macOS. The same file therefore runs on all three.
+
+Intel Macs are the exception: the jar bundles Apple Silicon (`mac-aarch64`) natives
+only, because Intel's `.dylib` filenames collide with them. On an Intel Mac use
+`mvn javafx:run`, which resolves the right natives automatically.
 
 **Requirement to run it:** any JDK 25 or later (Oracle, Temurin, …). No JavaFX
 installation is needed. The console shows a harmless
@@ -213,7 +239,7 @@ only contains the natives for your own OS, so it runs on that OS only.
 java -jar target/TetrisJava.jar
 ```
 
-Run it from the folder that should hold the game's data: `data/config.json` and
+Run it from the folder that should hold the game's data: `JavaTetrisConfig.json` and
 `JavaTetrisScore.json` are read and written relative to the current directory, so
 running from the project root reuses your existing settings and scores.
 
@@ -236,6 +262,7 @@ tetris_game/
 │   ├── main/
 │   │   ├── java/au/edu/Griffith/
 │   │   │   ├── TetrisApp.java              🚪 Application entry point; wires the layers together
+│   │   │   ├── Launcher.java               🚀 Plain main class for `java -jar`; calls TetrisApp.main
 │   │   │   │
 │   │   │   ├── model/                      🧠 MODEL — rules and state, zero JavaFX
 │   │   │   │   ├── GameModel.java          🎯 One field: board + score + state; the Observer subject
@@ -249,6 +276,8 @@ tetris_game/
 │   │   │   │   ├── Position.java           📦 record — a cell coordinate
 │   │   │   │   ├── Block.java              📦 record — a locked cell
 │   │   │   │   ├── ScoreEntry.java         📦 record — one high-score row (Comparable)
+│   │   │   │   ├── ScoreConfig.java        📦 record — the settings a score was made under
+│   │   │   │   ├── ScoreBoard.java         📦 record — the {"scores":[...]} file wrapper
 │   │   │   │   ├── tetromino/              🧩 The seven pieces, their enum and their factory
 │   │   │   │   ├── state/                  🔄 State pattern: Ready / Running / Paused / GameOver
 │   │   │   │   └── observer/               📡 Observer pattern: Observable, GameObserver, GameEvent
@@ -261,6 +290,7 @@ tetris_game/
 │   │   │   │   ├── ConfigurationScreen.java ⚙️ Settings controls
 │   │   │   │   ├── HighScoreScreen.java    🏆 Top-ten table
 │   │   │   │   ├── GameScreen.java         🎮 One or two fields; observes the models
+│   │   │   │   ├── PlayFieldView.java      🖼️ One field: board, side panel, server warning
 │   │   │   │   ├── BoardRenderer.java      🖌️ Canvas painting; the only TetrominoType → Color step
 │   │   │   │   └── SidePanel.java          📊 Player type, level, score, next piece
 │   │   │   │
@@ -272,6 +302,11 @@ tetris_game/
 │   │   │   │   ├── ConfigurationController.java ⚙️ Draft-edit and save settings
 │   │   │   │   ├── HighScoreController.java 🏆 Table rows, clear, record new score
 │   │   │   │   └── command/                📜 Command pattern: one class per player action
+│   │   │   │
+│   │   │   ├── ai/                         🤖 Board evaluation and move search for AIPlayer
+│   │   │   │   ├── BoardEvaluator.java     ⚖️ Weighted heuristics: height, holes, bumpiness, lines
+│   │   │   │   ├── TetrisAI.java           🔍 Rotation/column search with a two-piece lookahead
+│   │   │   │   └── Move.java               📦 record — the chosen column, rotations and score
 │   │   │   │
 │   │   │   ├── player/                     🕹️ Strategy: Human / AI / External + PlayerFactory
 │   │   │   ├── service/                    💾 Singletons over a generic JSON Repository<T>
