@@ -13,13 +13,7 @@
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>25</javafx.version>
-        <!--
-            Which Application subclass is launched. Defaults to the new MVC entry
-            point; the `legacy` profile below overrides it, so you can run either
-            build without editing this file:
-                mvn javafx:run            -> au.edu.Griffith.TetrisApp
-                mvn javafx:run -Plegacy   -> au.edu.Griffith.legacy.Main
-        -->
+        <!-- The Application subclass javafx:run launches. -->
         <app.mainClass>au.edu.Griffith.TetrisApp</app.mainClass>
         <!-- Main-Class of the runnable jar. Must not extend javafx.application.Application,
              otherwise `java -jar` refuses to start with JavaFX on the classpath. -->
@@ -190,18 +184,6 @@
     </build>
 
     <profiles>
-        <!--
-            Runs the Milestone 1 build instead of the new MVC one, for comparing
-            behaviour side by side while the gameplay is migrated:
-                mvn javafx:run -Plegacy
-            Delete this profile together with the au.edu.Griffith.legacy package.
-        -->
-        <profile>
-            <id>legacy</id>
-            <properties>
-                <app.mainClass>au.edu.Griffith.legacy.Main</app.mainClass>
-            </properties>
-        </profile>
         <!--
             Builds the distributable, cross-platform jar:
                 mvn clean package -Pcross-platform
