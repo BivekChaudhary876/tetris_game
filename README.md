@@ -176,19 +176,6 @@ mvn clean javafx:run
 
 The application should start with the splash screen and then display the main menu.
 
-#### Running the Milestone 1 build
-
-While the gameplay is being migrated into the MVC layers, the Milestone 1 application
-is still available under the `legacy` profile, so the two can be compared side by side:
-
-```bash
-mvn javafx:run -Plegacy     # Milestone 1 build  (au.edu.Griffith.legacy.Main)
-mvn javafx:run              # new MVC build      (au.edu.Griffith.TetrisApp)
-```
-
-No edit to `pom.xml` is needed to switch — the profile overrides the `app.mainClass`
-property. Both the profile and the `legacy` package are removed once migration is complete.
-
 ### Run from IntelliJ IDEA
 
 1. Open the `tetris_game` folder in IntelliJ IDEA.
@@ -310,8 +297,7 @@ tetris_game/
 │   │   │   │
 │   │   │   ├── player/                     🕹️ Strategy: Human / AI / External + PlayerFactory
 │   │   │   ├── service/                    💾 Singletons over a generic JSON Repository<T>
-│   │   │   ├── network/                    🌐 TetrisServer client (localhost:3000)
-│   │   │   └── legacy/                     ⚠️ Milestone 1 code — delete once fully migrated
+│   │   │   └── network/                    🌐 TetrisServer client (localhost:3000)
 │   │   │
 │   │   └── resources/
 │   │       ├── css/tetris.css              🎨 Shared stylesheet (replaces inline -fx- strings)
