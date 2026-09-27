@@ -52,46 +52,6 @@
             <artifactId>javafx-media</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-        <!-- Native libraries for every target OS, so one TetrisJava.jar runs on Windows,
-             Linux and macOS. Only graphics and media contain native code.
-             Intel Macs ('mac') can't be added too: their files clash with mac-aarch64. -->
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>win</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-media</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>win</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-media</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>mac-aarch64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-media</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>mac-aarch64</classifier>
-        </dependency>
-
         <!-- JSON persistence for config.json and scores.json (au.edu.Griffith.service). -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -151,8 +111,9 @@
                 </configuration>
             </plugin>
 
-            <!-- Bundles our classes, resources, Jackson and JavaFX (incl. native libraries
-                 for Windows, Linux and macOS) into one self-contained executable jar. -->
+            <!-- Bundles our classes, resources, Jackson and JavaFX into one self-contained
+                 executable jar. Natives for the build machine's OS only, unless built with
+                 -Pcross-platform (see profiles below). -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -240,6 +201,56 @@
             <properties>
                 <app.mainClass>au.edu.Griffith.legacy.Main</app.mainClass>
             </properties>
+        </profile>
+        <!--
+            Builds the distributable, cross-platform jar:
+                mvn clean package -Pcross-platform
+            Adds JavaFX native libraries for every target OS so one TetrisJava.jar runs
+            on Windows, Linux and macOS. Only graphics and media contain native code.
+            Off by default: javafx:run puts each jar on the module path separately, and
+            with several javafx-graphics jars it may load another OS's natives and fail
+            with "no suitable pipeline found".
+        -->
+        <profile>
+            <id>cross-platform</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-graphics</artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>win</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-media</artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>win</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-graphics</artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>linux</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-media</artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>linux</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-graphics</artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>mac-aarch64</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-media</artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>mac-aarch64</classifier>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 
