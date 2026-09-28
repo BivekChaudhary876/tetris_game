@@ -34,9 +34,10 @@ class HighScoreServiceTest {
 
     @Test
     void firstLoadStartsEmpty() {
-        // No file yet, and nothing invented to fill it.
+        // No entries invented to fill it, but the file is written straight
+        // away, the same way JavaTetrisConfig.json is on first load.
         assertTrue(service.getTable().getEntries().isEmpty());
-        assertFalse(Files.exists(scoresFile));
+        assertTrue(Files.exists(scoresFile));
     }
 
     @Test

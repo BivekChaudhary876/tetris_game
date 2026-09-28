@@ -44,12 +44,20 @@ public final class HighScoreService {
         return Holder.INSTANCE;
     }
 
-    /** The table, loaded from disk on first access. */
+    /** The table, loaded from disk on first access, file created if absent. */
     public HighScoreTable getTable() {
         if (!loaded) {
             // A missing file is a normal first run: start empty rather than
-            // inventing scores nobody played for.
-            repository.load().ifPresent(board -> table.replaceAll(board.scores()));
+            // inventing scores nobody played for, but still write the file so
+            // it exists on disk the same way JavaTetrisConfig.json does.
+            java.util.Optional<ScoreBoard> board = repository.load();
+
+            if (board.isPresent()) {
+                table.replaceAll(board.get().scores());
+            } else {
+                save();
+            }
+
             loaded = true;
         }
         return table;
