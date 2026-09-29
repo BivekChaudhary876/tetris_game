@@ -5,6 +5,7 @@ import au.edu.Griffith.controller.ScreenNavigator;
 import au.edu.Griffith.model.GameConfig;
 import au.edu.Griffith.service.AudioManager;
 import au.edu.Griffith.service.ConfigService;
+import au.edu.Griffith.service.HighScoreService;
 import au.edu.Griffith.view.MainMenuScreen;
 import au.edu.Griffith.view.SplashScreen;
 import javafx.application.Application;
@@ -31,6 +32,7 @@ public class TetrisApp extends Application {
         ScreenNavigator navigator = new ScreenNavigator(stage);
 
         GameConfig config = ConfigService.getInstance().getConfig();
+        HighScoreService.getInstance().getTable();
         AudioManager audio = AudioManager.getInstance();
         audio.setMusicOn(config.isMusicOn());
         audio.setEffectsOn(config.isSoundEffectsOn());
